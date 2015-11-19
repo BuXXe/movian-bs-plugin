@@ -1,0 +1,14 @@
+{
+  "type": "ecmascript",
+  "id": "bs.to",
+  "file": "bs.js",
+  "category": "video",
+  "showtimeVersion": "4.3.167",
+  "version": "0.1a",
+  "author": "BuXXe (@buxxe)",
+  "title": "bs.to",
+  "icon": "bs.png",
+  "synopsis": "Showtime plugin to watch bs.to streams",
+  "description":"<p>bs.to Showtime plugin allows the integration of bs.to streams into Showtime.</p>",
+  "homepage":"google.de"
+}
