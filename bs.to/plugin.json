@@ -8,7 +8,7 @@
   "author": "BuXXe (@buxxe)",
   "title": "bs.to",
   "icon": "bs.png",
-  "synopsis": "Showtime plugin to watch bs.to streams",
-  "description":"<p>bs.to Showtime plugin allows the integration of bs.to streams into Showtime.</p>",
-  "homepage":"google.de"
+  "synopsis": "Movian plugin to watch bs.to streams",
+  "description":"<p>bs.to Movian plugin allows the integration of bs.to streams into Movian. bs.to offers a broad variety of german / english tv-series.</p>",
+  "homepage":"https://github.com/BuXXe/movian-bs-plugin"
 }
