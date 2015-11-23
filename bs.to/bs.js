@@ -1,24 +1,24 @@
 /**
- * Showtime plugin to watch kinox.to streams 
+ * Movian plugin to watch bs.to streams 
  *
  * Copyright (C) 2015 BuXXe
  *
- *     This file is part of bs.to Showtime plugin.
+ *     This file is part of bs.to Movian plugin.
  *
- *  bs.to Showtime plugin is free software: you can redistribute it and/or modify
+ *  bs.to Movian plugin is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  bs.to Showtime plugin is distributed in the hope that it will be useful,
+ *  bs.to Movian plugin is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with kinox.to Showtime plugin.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with bs.to Movian plugin.  If not, see <http://www.gnu.org/licenses/>.
  *
- *  Download from : NOT YET AVAILABLE
+ *  Download from : https://github.com/BuXXe/movian-bs-plugin
  *
  */
    var html = require('showtime/html');
@@ -26,18 +26,12 @@
 (function(plugin) {
 
   var PLUGIN_PREFIX = "bs.to:";
-  
-  
-  
-  
-  
-  //TODO: do a check if any of the files in online and do the post request only if there are online ones
-  //TODO: exchange httpget to httpreq
+  // TODO: Search  
+  // TODO: do a check if any of the files in online and do the post request only if there are online ones
+  // TODO: exchange httpget to httpreq
   // INFO: Helpful Post Data reader: http://www.posttestserver.com/
   
   // HOSTER RESOLVER
-  
-
   function resolveVodLockercom(StreamSiteVideoLink)
   {	  
 	  var postdatas = [];
@@ -778,112 +772,65 @@
 	    }
   }
   
-  
-  // Handles the effective series site
-  // We get the /serie//XXX Link
-  // Show Seasons
+  // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
 	  	page.loading = false;
 	  	page.type = 'directory';
 	  	page.metadata.title = series.split("serie/")[1];
-	  	
-	    // Series Page selected
-	    var seriespage = 'http://bs.to/'+series;
-	    var seriespageresponse = showtime.httpGet(seriespage);
-	    
-	    
+
+	    var seriespageresponse = showtime.httpGet('http://bs.to/'+series);
 	  	var dom = html.parse(seriespageresponse.toString());
-	  	var seriesentry =  dom.root.getElementById('sp_left');
-	  	var pages = seriesentry.getElementByClassName("pages")[0].getElementByTagName("li");
+	  	var pages = dom.root.getElementById('sp_left').getElementByClassName("pages")[0].getElementByTagName("li");
 	  	
 	  	// INFO: all entries are seasons except for the last one which is a random episode link
-    	
     	for (var k = 0; k< pages.length-1; k++)
     	{	
     		var ancor = pages[k].getElementByTagName("a")[0];
-    		
-    		// Season as number
     		var seasonNumber = ancor.textContent;
-    		
-    		// get Season Link
     		var seasonLink = ancor.attributes.getNamedItem("href").value;
     		
     		page.appendItem(PLUGIN_PREFIX + ":SeasonHandler:"+ seasonLink, 'directory', {
     			  title: "Season " + seasonNumber
     			});
     	}
-
-
 		page.loading = false;
 	});
-
-  
-  // Register a service (will appear on home page)
-  var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
   
   // Shows a list of all series alphabetically 
   plugin.addURI(PLUGIN_PREFIX + ':Browse', function(page) {
-	  
 	  	page.type = "directory";
 	    page.metadata.title = "bs.to series list";
 	    
 	  	var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
-	  	
 	  	var dom = html.parse(BrowseResponse.toString());
-	  	
-	  	var serSeries =  dom.root.getElementById('series-alphabet-list')
-	  	
-	  	var entries = serSeries.getElementByTagName("li");
-	  	
-	    for(var k=0; k< entries.length; k++)
+	  	 
+	  	var entries =  dom.root.getElementById('series-alphabet-list').getElementByTagName("li");
+
+	  	for(var k=0; k< entries.length; k++)
 	    {
 	    	var ancor = entries[k].getElementByTagName("a")[0];
-	    	
-	    	// get stream link
 	    	var streamLink  = ancor.attributes.getNamedItem("href").value;
-
-	    	// get title
 	    	var title = ancor.textContent;
-	    	
-	    	page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'video', {
-				  title: title,
-				});
+   	
+	    	page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
 	    }
   });
 
-  
-  
+  // Register a service (will appear on home page)
+  var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
   
   // Register Start Page
-  // Should Show a Main Menu with Functionalities:
-  // Browse all series alphabetically
-  // TODO: Check if Search works
   plugin.addURI(PLUGIN_PREFIX+"start", function(page) {
     page.type = "directory";
     page.metadata.title = "bs.to Main Menu";
   
-    page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{
-		  title: "Browse",
-		});
+    page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
+
+    //    page.appendItem(PLUGIN_PREFIX + ':Search','item',{
+    //		  title: "Search...",
+    //	});
     
-//    page.appendItem(PLUGIN_PREFIX + ':', 'directory',{
-//		  title: "Law and Order",
-//		});
-    
-//    page.appendItem(PLUGIN_PREFIX + ':Search','item',{
-//		  title: "Search...",
-//	});
-//    
 	page.loading = false;
-	   
   });
 
 })(this);
-    
-          
-    
-//  setTimeout(function(){
-//  	showtime.message("after sleep",true,false);
-//  	page.loading = false;
-//  	}, 10000);
-//  
