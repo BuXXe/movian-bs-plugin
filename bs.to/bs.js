@@ -533,12 +533,10 @@
 	    return ListOfLinks;
   }
   // HOSTER RESOLVER END
+ 
+
   
-  
-  
-  
-  
-  //TODO: Use HTML Parser
+  // TODO: Use HTML Parser
   // extract direct link from response
   function getStreamSiteLink(response)
   {
@@ -546,126 +544,8 @@
 	  	return text.match(/<a href="(.*)" target=/)[1];
   }
   
-  
-   
-  // Lists the available episodes for a given season
-  plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
-	  page.type = 'directory';
-	  
-	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
-	  
-	  
-	  var dom = html.parse(SeasonResponse.toString());
-	  var seriesentry =  dom.root.getElementById('sp_left');
-	  var tablerows = seriesentry.getElementByTagName("table")[0].getElementByTagName("tr");
-	  
-	  // first row is header row
-	  
-	  
-	  for (var i=1;i < tablerows.length;i++)
-	  {
-		  try {
-			  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
-		  
-  			
-  			// TODO: right now: only streamcloud implemented 
-  			var streamcloudlink = tablerows[i].getElementByClassName("Streamcloud")[0].attributes.getNamedItem("href").value;
-		  
-		  	page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + streamcloudlink , 'directory', {
-  			  title: "Episode " + streamcloudlink.split("/")[streamcloudlink.split("/").length-2]
-  			});
-		  }catch(e)
-		  {
-		    	showtime.trace("One Episode is bad");
-		  }
-	  }
-  });
-  
  
-  // TODO: gives list of available hosts for given episode
-  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*)", function(page,episodeLink){
-	  page.type = 'directory';
-
-	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
-
-	    var directlink = new RegExp('href="http://streamcloud.eu(.*?)"');
-		var linewithlink = directlink.exec(getHosterLink.toString());
-		
-		
-	  	var vidlink = resolveStreamcloudeu(["http://streamcloud.eu"+linewithlink[1]]);
-	    
-	  	page.appendItem(vidlink[0][1], 'video', {
-			  title: vidlink[0][0]
-			});
-  });
-  
-  
-  //Play Episode gives the final list of direct links for a specific host
-  // here we also need the info about the count of mirrors
-  // http://kinox.to/aGET/Mirror/Two_and_a_Half_Men&Hoster=30&Mirror=2&Season=4&Episode=1
-  // MERGE THIS ONE WITH LinksForMovieHost
-  // Only differences: the args for the get request and the resolve of maxmirror
-
-  // Introducing a Series Flag: If the flag is equal to 0 we only use hosterid and URLname
-  // If the flag is 1 we have a series and need maxmirrors, season, episode too.
-  
-  // Here we have one specific Hoster selected and need to handle their links
-  plugin.addURI(PLUGIN_PREFIX + ":PlayEpisode:(.*):(.*):(.*):(.*):(.*):(.*)", function(page, URLname, hosterid, seriesflag, maxmirror, season, episode){
-	  	page.type = 'directory';
-
-	  	if(seriesflag == 0)
-	  		var maxmirror = getMaxMirror("/Stream/"+URLname+".html",hosterid);
-	  	
-	    var hosteridnumber = hosterid.split("_")[1];
-	    var StreamSiteVideoLink = [];
-
-	    for (var index = 1; index <= maxmirror; index++) 
-		{
-	    	var args;
-	    	if(seriesflag == 1)
-	    		args = {Hoster:hosteridnumber , Mirror: index, Season:season, Episode:episode};
-	    	else
-	    		args = {Hoster:hosteridnumber , Mirror: index};
-	    		
-	    	var getMirrorLink = showtime.httpGet("http://kinox.to/aGET/Mirror/"+URLname, args );
-		  
-	    	// TODO: check if available!
-	    	StreamSiteVideoLink[StreamSiteVideoLink.length] = getStreamSiteLink(getMirrorLink);
-		}
-	  
-	    // Here we handle the Hoster specific resolution
-	    HosterResolutionAndDisplay(page,hosteridnumber, StreamSiteVideoLink)
-});
-	  
-  
-  
-  // function which gives available hosts for given response
-  function getHostsForMovies(page, response, URLname)
-  {
-		var dom = html.parse(response.toString());
-	  	var HosterList =  dom.root.getElementById('HosterList');
-	  	
-	  	var entries = HosterList.getElementByTagName("li");
-	  	
-	  	for (var k=0;k<entries.length;k++)
-	  	{
-	  		// Hoster Name
-    		var hostname = entries[k].getElementByClassName("Named")[0].textContent;
-    		
-    		// hoster id
-    		var id = entries[k].attributes.getNamedItem("id").value
-    		
-    		// get information if this hoster is implemented
-    		var resolverstatus = checkResolver(id); 
-    		
-    		// give the effective links for a specific host
-    		// the attachment ":0:-1:X:X" is necessary to allow the use of the same page for series and movies
-    		page.appendItem(PLUGIN_PREFIX + ":PlayEpisode:"+ URLname + ":" + id + ":0:-1:X:X"  , 'directory', {
-    			  title: new showtime.RichText(hostname + resolverstatus)
-    			});
-	  	}
-  }
-  
+   
   function checkResolver(hosterid)
   {
 	  var hosternumber = hosterid.split("_")[1];
@@ -680,18 +560,7 @@
 	  
   }
   
-  function getMaxMirror(movie,hosterid)
-  {
-	    var moviepageresponse = showtime.httpGet('http://kinox.to'+movie);
-	  
-	    var getmirrorcountpattern = new RegExp('<li id="'+hosterid+'"(.*?)li>');
-		var linewithhost = getmirrorcountpattern.exec(moviepageresponse.toString());
-	    var mirrorcount = linewithhost[1].match(/<b>Mirror<\/b>: (.*)<br/);
-		  
-	    // got the mirror count in format x/y
-	    return mirrorcount[1].split("/")[1];
-  }
-  
+
   
   
   function HosterResolutionAndDisplay(page, hosternumber, StreamSiteVideoLink)
@@ -771,6 +640,52 @@
 		    }
 	    }
   }
+  
+  
+  
+  
+  // TODO: gives list of available hosts for given episode
+  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*)", function(page,episodeLink){
+	  page.type = 'directory';
+
+	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
+	    var directlink = new RegExp('href="http://streamcloud.eu(.*?)"');
+		var linewithlink = directlink.exec(getHosterLink.toString());
+	  	var vidlink = resolveStreamcloudeu(["http://streamcloud.eu"+linewithlink[1]]);
+	    
+	  	page.appendItem(vidlink[0][1], 'video', { title: vidlink[0][0] });
+  });
+  
+  
+  // Lists the available episodes for a given season
+  plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
+	  page.type = 'directory';
+	  
+	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
+	  var dom = html.parse(SeasonResponse.toString());
+	  var tablerows = dom.root.getElementById('sp_left').getElementByTagName("table")[0].getElementByTagName("tr");
+	  
+	  // ignore first header row
+	  for (var i = 1; i < tablerows.length;i++)
+	  {
+		  try 
+		  {
+			  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
+
+			  // TODO: right now: only streamcloud implemented -> implement other hosters 
+  			  var streamcloudlink = tablerows[i].getElementByClassName("Streamcloud")[0].attributes.getNamedItem("href").value;
+		  
+  			  page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + streamcloudlink , 'directory', {
+  				  title: "Episode " + streamcloudlink.split("/")[streamcloudlink.split("/").length-2]
+  			  });
+		  }
+		  catch(e)
+		  {
+		    	showtime.trace("One Episode is bad");
+		  }
+	  }
+  });
+  
   
   // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
