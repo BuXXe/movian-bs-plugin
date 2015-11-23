@@ -543,23 +543,6 @@
 	  	var text = response.toString().replace(/\\/g,'');
 	  	return text.match(/<a href="(.*)" target=/)[1];
   }
-  
- 
-   
-  function checkResolver(hosterid)
-  {
-	  var hosternumber = hosterid.split("_")[1];
-	  
-	  if(availableResolvers.indexOf(hosternumber) > -1)
-	  {
-		  return " <font color=\"009933\">[Working]</font>";
-	  }
-	  else{
-		  return " <font color=\"CC0000\">[Not Working]</font>";
-	  }
-	  
-  }
-  
  
   
   function HosterResolutionAndDisplay(page, hosternumber, StreamSiteVideoLink)
@@ -620,11 +603,9 @@
 	    {
 	    	page.appendPassiveItem("label", null, { title: "Hoster not yet implemented"});
 	    }
-	    
 
 	    if(FinalLinks.length == 0)
 	    {
-	    	
 	    	page.appendPassiveItem("label", null, { title: "No Valid Links Available"});
 	    }
 	    else
@@ -640,19 +621,21 @@
 	    }
   }
   
-  
+  //---------------------------------------------------------------------------------------------------------------------
 
   
   // TODO: make it use the hoster-resolution in order to support more hosters
-  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*)", function(page,episodeLink){
-	  page.type = 'directory';
+  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink,hostername){
+	  	page.type = 'directory';
 
-	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
-	    var directlink = new RegExp('href="http://streamcloud.eu(.*?)"');
-		var linewithlink = directlink.exec(getHosterLink.toString());
-	  	var vidlink = resolveStreamcloudeu(["http://streamcloud.eu"+linewithlink[1]]);
-	    
-	  	page.appendItem(vidlink[0][1], 'video', { title: vidlink[0][0] });
+		var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
+		var dom = html.parse(getHosterLink.toString());
+		var directlink = dom.root.getElementById('video_actions').getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+
+		// TODO: dynamic hoster resolution 
+		var vidlink = resolveStreamcloudeu([directlink]);
+		
+		page.appendItem(vidlink[0][1], 'video', { title: vidlink[0][0] });
   });
   
   var availableResolvers=["Streamcloud"];
@@ -675,7 +658,7 @@
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 	  	
-		// we have the episodes page and the li with class "current" is the current season and the other is current episode
+		// we have the episodes page and the li with class "current" which is the current season and the other is current episode
 		var hosters = dom.root.getElementByClassName('current')[1].getElementByTagName("a");
 	  	
 		// first anchor is the current episode, the rest are hoster links
@@ -692,11 +675,10 @@
 	    	}
 	    	else
 	    	{
-				page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink , 'directory', {
+				page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname , 'directory', {
 					  title: new showtime.RichText(hostname + resolverstatus) 
 				  });
 	    	}
-			
 	    }
   });
 
