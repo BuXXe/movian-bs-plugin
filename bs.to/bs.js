@@ -466,41 +466,30 @@
 	    
 	    return ListOfLinks;
   }
+   // HOSTER RESOLVER END
+ 
   
+  //---------------------------------------------------------------------------------------------------------------------
   
-  
+  // returns list [link, filelink] or null if no valid link
   function resolveStreamcloudeu(StreamSiteVideoLink)
   {
-	  	var postdatas = [];
+	  	var postdata;
 	  	var validentries = false;
 	  	
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	
-	    	showtime.trace(StreamSiteVideoLink[index]);
-
-	    	var pattern = new RegExp('<input type="hidden" name="op" value="(.*?)">[^<]+<input type="hidden" name="usr_login" value="(.*?)">[^<]+<input type="hidden" name="id" value="(.*?)">[^<]+<input type="hidden" name="fname" value="(.*?)">[^<]+<input type="hidden" name="referer" value="(.*?)">[^<]+<input type="hidden" name="hash" value="(.*?)">[^<]+<input type="submit" name="imhuman" id="btn_download" class="button gray" value="(.*?)">');
-		    var res = pattern.exec(getEmissionsResponse.toString());
-		    
-		    // File Not Found (404) Error 
-		    if(res != null)
-		    {
-		    	postdatas[postdatas.length] = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6],imhuman:res[7]};
-		    	validentries = true;
-		    }
-		    else{
-		    	showtime.trace("XXXXXXXXXXXXXXXXXX STREAM NOT AVAILABLE ANYMORE XXXXXXXXXXXXXXXXX")
-		    	postdatas[postdatas.length] = null;
-		    }
-	    }
+    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	var pattern = new RegExp('<input type="hidden" name="op" value="(.*?)">[^<]+<input type="hidden" name="usr_login" value="(.*?)">[^<]+<input type="hidden" name="id" value="(.*?)">[^<]+<input type="hidden" name="fname" value="(.*?)">[^<]+<input type="hidden" name="referer" value="(.*?)">[^<]+<input type="hidden" name="hash" value="(.*?)">[^<]+<input type="submit" name="imhuman" id="btn_download" class="button gray" value="(.*?)">');
+	    var res = pattern.exec(getEmissionsResponse.toString());
 	    
-	    var ListOfLinks = [];
+	    // File Not Found (404) Error 
+	    if(res != null)
+	    {
+	    	postdata = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6],imhuman:res[7]};
+	    	validentries = true;
+	    }
 	    
 	    if(!validentries)
-	    {
-	    	return ListOfLinks;
-	    }
+	      	return null;
 	    
 	    // POST DATA COLLECTED
 	    // WAIT 11 SECONDS
@@ -508,137 +497,48 @@
 	    	showtime.notify("Waiting " + (11-i).toString() +" Seconds",1);
 	        showtime.sleep(1);
 	    }
-	    
-	   
-	    
+	     
 	    // POSTING DATA
-	    for (var index = 0; index < postdatas.length; index++) 
-	    {
-	    	// check if valid entry
-	    	if(postdatas[index] != null)
-	    	{
-		    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-		    	{
-			    	postdata:  postdatas[index],
-			    	method: "POST"
-			    });
+	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
 		    	
-		    	var videopattern = new RegExp('file: "(.*?)",');
-		    	var res2 = videopattern.exec(postresponse.toString());
-		        
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],res2[1]];
-	    	}
-	    }
-	    
-	    return ListOfLinks;
+    	var videopattern = new RegExp('file: "(.*?)",');
+    	var res2 = videopattern.exec(postresponse.toString());
+     	
+    	return [StreamSiteVideoLink,res2[1]];
   }
-  // HOSTER RESOLVER END
- 
-
   
-  // TODO: Use HTML Parser
-  // extract direct link from response
-  function getStreamSiteLink(response)
+  
+  var availableResolvers=["Streamcloud"];
+  
+  
+  function resolveHoster(link, hostername)
   {
-	  	var text = response.toString().replace(/\\/g,'');
-	  	return text.match(/<a href="(.*)" target=/)[1];
-  }
- 
-  
-  function HosterResolutionAndDisplay(page, hosternumber, StreamSiteVideoLink)
-  {
-	    // List of tuples of streamlink and direct video link
-  		var FinalLinks=[];
-	    
-	    // Streamcloud.eu
-	    if(hosternumber == 30)
-	    {
-	    	FinalLinks = resolveStreamcloudeu(StreamSiteVideoLink);
-	    }
-	    // Filenuke.com
-	    else if (hosternumber == 34)
-    	{
-	    	FinalLinks = resolveFilenukecom(StreamSiteVideoLink);
-    	}
-	    // NowVideo.sx
-	    else if(hosternumber == 40)
-    	{
-	    	// NOT WORKING RIGHT NOW
-	    	// Request does not give correct link back and even if, the link cannot be used directly somehow
-	    	// FinalLinks = resolveNowvideosx(StreamSiteVideoLink);
-	    	showtime.trace("Hoster resolution not working");
-    	}
-	    // Primeshare.tv
-	    else if (hosternumber == 45)
-	    {
-	    	FinalLinks = resolvePrimesharetv(StreamSiteVideoLink);
-    	}
-	    // MooShare.biz
-	    else if (hosternumber == 49)
-	    {
-	    	// NOT WORKING RIGHT NOW
-	    	// Request does not give correct site back
-	    	// FinalLinks = resolveMoosharebiz(StreamSiteVideoLink);
-	    	showtime.trace("Hoster resolution not working");
-    	}
-	    // Shared.sx
-	    else if (hosternumber == 52)
-	    {
-	    	// NOT WORKING DUE TO HTML5 AND POST REQUEST PROBLEM
-	    	// FinalLinks = resolveSharedsx(StreamSiteVideoLink);
-	    	showtime.trace("Hoster resolution not working");
-	    }
-	    // Promptfile.com
-	    else if( hosternumber == 56)
-	    {
-	    	FinalLinks = resolvePromptfilecom(StreamSiteVideoLink);
-	    }
-	    // VodLocker.com
-	    else if(hosternumber == 65)
-    	{
-	    	FinalLinks = resolveVodLockercom(StreamSiteVideoLink);
-    	}
-	    // Default part to catch unimplemented hosters
-	    else
-	    {
-	    	page.appendPassiveItem("label", null, { title: "Hoster not yet implemented"});
-	    }
-
-	    if(FinalLinks.length == 0)
-	    {
-	    	page.appendPassiveItem("label", null, { title: "No Valid Links Available"});
-	    }
-	    else
-	    {
-		    // A Hoster Resolution provides the final links to the files + the original hoster links as a list of lists
-		    // this list is then used to fill the page
-		    for(var index = 0; index < FinalLinks.length; index++)
-		    {
-		    	page.appendItem(FinalLinks[index][1], 'video', {
-				  title: FinalLinks[index][0]
-				});
-		    }
-	    }
+		var FinalLink;
+		
+		// Streamcloud.eu
+		if(hostername == "Streamcloud")
+		{
+			FinalLink = resolveStreamcloudeu(link);
+		}
+		
+		return FinalLink;
   }
   
-  //---------------------------------------------------------------------------------------------------------------------
-
   
-  // TODO: make it use the hoster-resolution in order to support more hosters
-  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink,hostername){
+  // resolves the hoster link and gives the final link to the stream file
+  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink, hostername){
 	  	page.type = 'directory';
 
 		var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 		var directlink = dom.root.getElementById('video_actions').getElementByTagName("a")[0].attributes.getNamedItem("href").value;
 
-		// TODO: dynamic hoster resolution 
-		var vidlink = resolveStreamcloudeu([directlink]);
+		var vidlink = resolveHoster(directlink, hostername)
+		if(vidlink == null)
+    		page.appendPassiveItem('video', '', { title: "File is not available"  });
 		
-		page.appendItem(vidlink[0][1], 'video', { title: vidlink[0][0] });
+		page.appendItem(vidlink[1], 'video', { title: vidlink[0] });
   });
-  
-  var availableResolvers=["Streamcloud"];
   
   // check if the resolver for the given hoster is implemented
   function checkResolver(hostername)
@@ -681,7 +581,6 @@
 	    	}
 	    }
   });
-
   
   // Lists the available episodes for a given season
   plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
@@ -694,32 +593,17 @@
 	  // ignore first header row
 	  for (var i = 1; i < tablerows.length;i++)
 	  {
-		  try 
-		  {
-			  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
-			  var episodeLink = tablerows[i].getElementByTagName("td")[1].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
-			  
-			  // TODO: use real entry instead of create from href. Problem so far: <strong> and <span> tags 
-			  var episodename = episodeLink.split("/")[episodeLink.split("/").length-1];
-
-			  // TODO: right now: only streamcloud implemented -> implement other hosters 
-  			  //var streamcloudlink = tablerows[i].getElementByClassName("Streamcloud")[0].attributes.getNamedItem("href").value;
-//		  
-//  			  page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + streamcloudlink , 'directory', {
-//  				  title: "Episode " + streamcloudlink.split("/")[streamcloudlink.split("/").length-2]
-//  			  });
-  			  
-  			  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
-				  title: "Episode " + episodename
-			  });
-		  }
-		  catch(e)
-		  {
-		    	showtime.trace("One Episode is bad");
-		  }
+		  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
+		  var episodeLink = tablerows[i].getElementByTagName("td")[1].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+		  
+		  // TODO: use real entry instead of create from href. Problem so far: <strong> and <span> tags 
+		  var episodename = episodeLink.split("/")[episodeLink.split("/").length-1];
+		  
+		  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
+			  title: "Episode " + episodename
+		  });
 	  }
   });
-  
   
   // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
