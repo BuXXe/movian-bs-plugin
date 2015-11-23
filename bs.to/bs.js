@@ -560,8 +560,7 @@
 	  
   }
   
-
-  
+ 
   
   function HosterResolutionAndDisplay(page, hosternumber, StreamSiteVideoLink)
   {
@@ -642,9 +641,9 @@
   }
   
   
+
   
-  
-  // TODO: gives list of available hosts for given episode
+  // TODO: make it use the hoster-resolution in order to support more hosters
   plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*)", function(page,episodeLink){
 	  page.type = 'directory';
 
@@ -656,6 +655,51 @@
 	  	page.appendItem(vidlink[0][1], 'video', { title: vidlink[0][0] });
   });
   
+  var availableResolvers=["Streamcloud"];
+  
+  // check if the resolver for the given hoster is implemented
+  function checkResolver(hostername)
+  {
+	  if(availableResolvers.indexOf(hostername) > -1)
+	  {
+		  return " <font color=\"009933\">[Working]</font>";
+	  }
+	  else{
+		  return " <font color=\"CC0000\">[Not Working]</font>";
+	  }
+  }
+  
+  plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
+	  page.type = 'directory';
+
+	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
+		var dom = html.parse(getHosterLink.toString());
+	  	
+		// we have the episodes page and the li with class "current" is the current season and the other is current episode
+		var hosters = dom.root.getElementByClassName('current')[1].getElementByTagName("a");
+	  	
+		// first anchor is the current episode, the rest are hoster links
+		for(var k=1; k< hosters.length; k++)
+	    {
+	    	var hostname = hosters[k].attributes.getNamedItem("class").value.replace("v-centered icon ","");
+	    	var hosterlink  = hosters[k].attributes.getNamedItem("href").value;
+	    	
+	    	var resolverstatus = checkResolver(hostname);
+	    	
+	    	if(resolverstatus.indexOf("Not Working")>1)
+	    	{
+	    		page.appendPassiveItem('video', '', { title: new showtime.RichText(hostname + resolverstatus)  });
+	    	}
+	    	else
+	    	{
+				page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink , 'directory', {
+					  title: new showtime.RichText(hostname + resolverstatus) 
+				  });
+	    	}
+			
+	    }
+  });
+
   
   // Lists the available episodes for a given season
   plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
@@ -671,13 +715,21 @@
 		  try 
 		  {
 			  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
+			  var episodeLink = tablerows[i].getElementByTagName("td")[1].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+			  
+			  // TODO: use real entry instead of create from href. Problem so far: <strong> and <span> tags 
+			  var episodename = episodeLink.split("/")[episodeLink.split("/").length-1];
 
 			  // TODO: right now: only streamcloud implemented -> implement other hosters 
-  			  var streamcloudlink = tablerows[i].getElementByClassName("Streamcloud")[0].attributes.getNamedItem("href").value;
-		  
-  			  page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + streamcloudlink , 'directory', {
-  				  title: "Episode " + streamcloudlink.split("/")[streamcloudlink.split("/").length-2]
-  			  });
+  			  //var streamcloudlink = tablerows[i].getElementByClassName("Streamcloud")[0].attributes.getNamedItem("href").value;
+//		  
+//  			  page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + streamcloudlink , 'directory', {
+//  				  title: "Episode " + streamcloudlink.split("/")[streamcloudlink.split("/").length-2]
+//  			  });
+  			  
+  			  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
+				  title: "Episode " + episodename
+			  });
 		  }
 		  catch(e)
 		  {
