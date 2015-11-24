@@ -216,7 +216,6 @@
   	    var finallink = /<source src="(.*)" type="video\/mp4">/gi.exec(getEmissionsResponse.toString());
     	return [StreamSiteVideoLink,finallink[1]];*/
     	
-    	
     	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
     	var getEmissionsResponse = showtime.httpReq(StreamSiteVideoLink,{noFollow:true,compression:true});
   		  	
@@ -284,7 +283,7 @@
   //returns list [link, filelink] or null if no valid link
   function resolveNowvideoto(StreamSiteVideoLink)
   {
-	  	// it seems like the links to movshare miss the www
+	  	// it seems like the links to nowvideo miss the www
 	  	// we add this here cause otherwise the request would fail due to noFollow 
 	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
 	  	var postdata;
@@ -336,8 +335,44 @@
     	return [StreamSiteVideoLink,finallink[1]];
   }
   
+  //returns list [link, filelink] or null if no valid link
+  function resolveVideoweedes(StreamSiteVideoLink)
+  {
+	  	// it seems like the links to videoweed miss the www
+	  	// we add this here cause otherwise the request would fail due to noFollow
+	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
+    	
+	  	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
+    	var getEmissionsResponse = showtime.httpReq(correctedlink,{noFollow:true,compression:true});
+  		  	
+    	try
+    	{
+	    	var cid = /flashvars.cid="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var key = /flashvars.filekey="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var file = /flashvars.file="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+    	}catch(e)
+    	{
+    		return null;
+    	}
+    	
+	    var postresponse = showtime.httpReq("http://www.videoweed.es/api/player.api.php", {method: "GET" , args:{
+	    	user:"undefined",
+	    		cid3:"bs.to",
+	    		pass:"undefined",
+	    		cid:cid,
+	    		cid2:"undefined",
+	    		key:key,
+	    		file:file,
+	    		numOfErrors:"0"
+	    }});
+		    
+	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
+	        	
+    	return [StreamSiteVideoLink,finallink[1]];
+  }
   
-  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo"];
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed"];
   
   
   function resolveHoster(link, hostername)
@@ -378,6 +413,11 @@
 		if(hostername == "NowVideo")
 		{
 			FinalLink = resolveNowvideoto(link);
+		}
+		// VideoWeed.es
+		if(hostername == "VideoWeed")
+		{
+			FinalLink = resolveVideoweedes(link);
 		}
 		
 		return FinalLink;
