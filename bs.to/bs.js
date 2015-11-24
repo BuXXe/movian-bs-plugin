@@ -36,445 +36,7 @@
   // FlashX -> resolver working / video working -> seems to have only english episodes?
   // Powerwatch -> resolver working / video working
   // Cloudtime -> resolver working / video working (Mobile mp4 version in code had bad performance)
-  
-  
-  // HOSTER RESOLVER
-  function resolveVodLockercom(StreamSiteVideoLink)
-  {	  
-	  var postdatas = [];
-	  	var validentries = false;
-	  	
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    	showtime.trace(getEmissionsResponse.toString());
-    	
-	    	var dom = html.parse(getEmissionsResponse.toString());
-		  	var hiddenfields =  dom.root.getElementByTagName('Form')[1].getElementByTagName("input");
-		  	
-	    	res = [];
-	    	
-	    	for(var k = 0; k < hiddenfields.length; k++)
-	    	{
-	    		res[res.length] = hiddenfields[k].attributes.getNamedItem("value").value;
-	    		showtime.trace(res[k]);
-	    	}
-	    	
-	    	showtime.trace(res.length);
-	    	
-		    
-		    // File Not Found (404) Error 
-		    if(res != null)
-		    {
-		    	postdatas[postdatas.length] = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6],imhuman:res[7]};
-		    	validentries = true;
-		    }
-		    else{
-		    	showtime.trace("XXXXXXXXXXXXXXXXXX STREAM NOT AVAILABLE ANYMORE XXXXXXXXXXXXXXXXX")
-		    	postdatas[postdatas.length] = null;
-		    }
-	    }
-	    
-	    var ListOfLinks = [];
-	    
-	    if(!validentries)
-	    {
-	    	return ListOfLinks;
-	    }
-	    
-	    // POST DATA COLLECTED
-	    // WAIT 2 SECONDS
-	    for (var i = 0; i < 3; i++) {
-	    	showtime.notify("Waiting " + (3-i).toString() +" Seconds",1);
-	        showtime.sleep(1);
-	    }
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < postdatas.length; index++) 
-	    {
-	    	// check if valid entry
-	    	if(postdatas[index] != null)
-	    	{
-		    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-		    	{
-			    	postdata:  postdatas[index],
-			    	method: "POST"
-			    });
-		    	
-		    	var videopattern = new RegExp('file: "(.*?)",');
-		    	var res2 = videopattern.exec(postresponse.toString());
-		        showtime.trace(res2);
-		    	showtime.trace(res2.length);
-		    	
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],res2[1]];
-	    	}
-	    }
-	    
-	    return ListOfLinks;
-  }
-  
-  function resolvePromptfilecom(StreamSiteVideoLink)
-  {
-		postdatas = [];
-	  // Posts chash
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    	
-	    	var dom = html.parse(getEmissionsResponse.toString());
-		  	var form =  dom.root.getElementByTagName('form')[0];
-		  	var chash = form.getElementByTagName('input')[0].attributes.getNamedItem("value").value;
-	    	postdatas[postdatas.length] = chash;
-	    }
-	    
-	    var ListOfLinks = [];
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-	    	{
-		    	// Example: http://primeshare.tv/download/B78A79EA24
-	    		postdata:  {chash: postdatas[index]},
-		    	method: "POST"
-		    });
-
-	    	if(postresponse != null)
-	    	{	
-		    	var videopattern = new RegExp("url: '(.*?)',");
-			  	var vidLink = videopattern.exec(postresponse.toString())[1];
-			  	    	
-		    	showtime.trace(vidLink);
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],vidLink];
-	    	}
-	    }
-	    
-	    return ListOfLinks;
-  }
-  
-  // NOT WORKING RIGHT NOW
-  function resolveMoosharebiz(StreamSiteVideoLink)
-  {
-	  // Wait 5 Seconds
-	  // seems to be closely related to streamcloud.eu
-	  // same post data right?
-	  
-	  var postdatas = [];
-	  	var validentries = false;
-	  	
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    	showtime.trace(getEmissionsResponse.toString());
-	    	
-	    	//var pattern = new RegExp('<input type="hidden" name="op" value="(.*?)">[^<]+<input type="hidden" name="usr_login" value="(.*?)">[^<]+<input type="hidden" name="id" value="(.*?)">[^<]+<input type="hidden" name="fname" value="(.*?)">[^<]+<input type="hidden" name="referer" value="(.*?)">[^<]+<input type="hidden" name="hash" value="(.*?)">[^<]+<input type="submit" name="imhuman" value="(.*?)" id="btn_download">');
-	    	//var res = pattern.exec(getEmissionsResponse.toString());
-	    	
-	    	var dom = html.parse(getEmissionsResponse.toString());
-		  	var hiddenfields =  dom.root.getElementByTagName('Form')[1].getElementByTagName("input");
-		  	
-	    	res = [];
-	    	
-	    	for(var k = 0; k < hiddenfields.length; k++)
-	    	{
-	    		res[res.length] = hiddenfields[k].attributes.getNamedItem("value").value;
-	    		showtime.trace(res[k]);
-	    	}
-	    	
-	    	showtime.trace(res.length);
-	    	
-		    
-		    // File Not Found (404) Error 
-		    if(res != null)
-		    {
-		    	postdatas[postdatas.length] = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6],imhuman:res[7]};
-		    	validentries = true;
-		    }
-		    else{
-		    	showtime.trace("XXXXXXXXXXXXXXXXXX STREAM NOT AVAILABLE ANYMORE XXXXXXXXXXXXXXXXX")
-		    	postdatas[postdatas.length] = null;
-		    }
-	    }
-	    
-	    var ListOfLinks = [];
-	    
-	    if(!validentries)
-	    {
-	    	return ListOfLinks;
-	    }
-	    
-	    // POST DATA COLLECTED
-	    // WAIT 5 SECONDS
-	    for (var i = 0; i < 5; i++) {
-	    	showtime.notify("Waiting " + (5-i).toString() +" Seconds",1);
-	        showtime.sleep(1);
-	    }
-	    
-	   
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < postdatas.length; index++) 
-	    {
-	    	// check if valid entry
-	    	if(postdatas[index] != null)
-	    	{
-		    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-		    	{
-			    	postdata:  postdatas[index],
-			    	method: "POST"
-			    });
-		    	var postresponse2 = showtime.httpReq("http://posttestserver.com/post.php", 
-				    	{
-					    	postdata:  postresponse.toString(),
-					    	method: "POST"
-					    });
-		    	
-		    	
-		    	
-		    	showtime.trace(postresponse2.toString());
-		    	
-		    	showtime.trace(postresponse.toString());
-		    	var videopattern = new RegExp('file: "(.*?)",');
-		    	var res2 = videopattern.exec(postresponse.toString());
-		        showtime.trace(res2);
-		    	showtime.trace(res2.length);
-		    	
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],res2[1]];
-	    	}
-	    }
-	    
-	    return ListOfLinks;
-  }
-  
-  // NOT WORKING
-  // two problems seem to occur: some weird problem to get the response correctly and you cannnot use the direct link to the video file
-  function resolveNowvideosx(StreamSiteVideoLink)
-  {
-	  var getdatas = [];
-	  
-	  for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    	
-	    	// TODO: Check for 404
-	    	// http://www.nowvideo.sx/api/player.api.php?user=undefined&cid3=kinox%2Etv&pass=undefined&cid=1&cid2=undefined&key=131%2E234%2E64%2E55%2D0a60aa35dd7363b48587e1fd591d4201&file=c06733f4f10e9&numOfErrors=0
-	    	var fkzdpattern = new RegExp('fkzd="(.*?)";');
-	    	var fkzd = fkzdpattern.exec(getEmissionsResponse.toString());
-	    	var filepattern = new RegExp('flashvars.file="(.*?)";');
-	    	var fileentry = filepattern.exec(getEmissionsResponse.toString());
-	    	var cid3pattern = new RegExp('flashvars.cid3="(.*?)";');
-	    	var cid3entry = cid3pattern.exec(getEmissionsResponse.toString());
-	    	var cidpattern = new RegExp('flashvars.cid="(.*?)";');
-	    	var cidentry = cidpattern.exec(getEmissionsResponse.toString());
-	    		
-	    	getdatas[getdatas.length] = {user: "undefined" , cid3: cid3entry , pass:  "undefined", cid : cidentry, cid2: "undefined", key:fkzd,file:fileentry,numOfErrors:"0"};
-		    	
-	    }
-	    
-	  	var ListOfLinks = [];
-	    
-	    // GET DATA Request
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	if(getdatas[index] != null)
-	    	{
-	    		var getresponse = showtime.httpReq("http://www.nowvideo.sx/api/player.api.php", 
-	    		
-		    	{
-		    		args:   getdatas[index]
-		    		
-			    });
-	
-		    	if(getresponse != null)
-		    	{	
-		    		showtime.trace(getresponse.toString());
-//		    		var dom = html.parse(postreponse.toString());
-//				  	var videoentry =  dom.root.getElementByClassName('stream-content')[0].getNamedItem("data-url").value;
-//				  	
-//				  	showtime.trace(videoentry);
-//			    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],videoentry];
-		    	}
-	    	}
-	    }
-	    
-	  return ListOfLinks;
-	  
-  }
-  
-  // NOT WORKING
-  function resolveSharedsx(StreamSiteVideoLink)
-  {
-	  // 12 Seconds Waiting time
-	  // seems to be the only <form> in the page
-	  // take the form and get info
-	  //	<form method="POST">
-	  //		<input type="hidden" name="hash" value="poDUFv4ipFbYoKe-2uOdlg" />
-	  //		<input type="hidden" name="expires" value="1429199570" />
-	  //		<input type="hidden" name="timestamp" value="1429185170" />
-	  //		<button id="access" class="btn btn-large btn-info btn-continue" type="submit" disabled>Continue to file</button>
-	  //	</form>
-	  
-	  // TODO: Problem with the POST Request! The website checks for HTML5 support and deletes the video link if no support is given.
-	  // Therefor: the Link cannot be extracted right now. 
-	  // There is a project which uses shared.sx and does the same. it has something to do with the requests from the ps3 / movian....
-	  // http://xstream-addon.square7.ch/showthread.php?tid=84
-	  
-	  var postdatas = [];
-	  
-	  for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    	
-	    	var dom = html.parse(getEmissionsResponse.toString());
-		  	var form =  dom.root.getElementByTagName('form')[0];
-		  	var entries = form.getElementByTagName('input');
-		  	
-		  	
-	  		// hash expires timestamp
-		  	// File Not Found (404) Error 
-		    if(entries != null)
-		    {
-		    	var ha = entries[0].attributes.getNamedItem("value").value;
-		    	var ex = entries[1].attributes.getNamedItem("value").value;
-		    	var ts = entries[2].attributes.getNamedItem("value").value;
-		    	
-		    	showtime.trace(ha);
-		    	showtime.trace(ex);
-		    	showtime.trace(ts);
-		    	
-		    	postdatas[postdatas.length] = {hash: ha , expires: ex, timestamp:  ts};
-		    	validentries = true;
-		    }
-		    else{
-		    	showtime.trace("XXXXXXXXXXXXXXXXXX STREAM NOT AVAILABLE ANYMORE XXXXXXXXXXXXXXXXX")
-		    	postdatas[postdatas.length] = null;
-		    }
-		    
-	    	
-	    }
-	    
-	    // POST DATA COLLECTED
-	    // WAIT 12 SECONDS
-	    for (var i = 0; i < 13; i++) {
-	    	showtime.notify("Waiting " + (13-i).toString() +" Seconds",1);
-	        showtime.sleep(1);
-	    }	
-	  
-	  	var ListOfLinks = [];
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	if(postdatas[index] != null)
-	    	{
-	    		var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-	    		
-		    	{
-		    		postdata:   {hash: postdatas[0] , expires: postdatas[1], timestamp:  postdatas[2]},
-			    	method: "POST"
-			    });
-	
-		    	if(postresponse != null)
-		    	{	
-		    		var dom = html.parse(postresponse.toString());
-				  	var videoentry =  dom.root.getElementByClassName('stream-content')[0];
-				  	
-				  	videoentry = videoentry.attributes.getNamedItem("data-url").value;
-				  	
-				  	showtime.trace(videoentry);
-			    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],videoentry];
-		    	}
-	    	}
-	    }
-	    
-	    return ListOfLinks;
-  }
-  
-  
-  function resolveFilenukecom(StreamSiteVideoLink)
-  {
-	  	// it seems that the only thing that is posted is:
-	  	// method_free: "Free"
-	  	var ListOfLinks = [];
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-	    	{
-		    	postdata:  {method_free: "Free"},
-		    	method: "POST"
-		    });
-	    	
-	    	if(postresponse != null)
-	    	{
-		    	var videopattern = new RegExp("var lnk234 = '(.*?)';");
-		    	var res2 = videopattern.exec(postresponse.toString());
-		    	
-		    	showtime.trace(res2[1]);
-		        
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],res2[1]];
-	    	}
-	    }
-	    return ListOfLinks;
-  }
-  
-  function resolvePrimesharetv(StreamSiteVideoLink)
-  {
-	  	// 8 Seconds Wait Time
-	  	// Post: hash: {part of the URL} (Example hash : 40027F9C38)
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink[index]);
-	    	showtime.trace(StreamSiteVideoLink[index]);
-	    }
-	    
-	    // POST DATA COLLECTED
-	    // WAIT 8 SECONDS
-	    for (var i = 0; i < 9; i++) {
-	    	showtime.notify("Waiting " + (9-i).toString() +" Seconds",1);
-	        showtime.sleep(1);
-	    }	
-	  
-	  	var ListOfLinks = [];
-	    
-	    // POSTING DATA
-	    for (var index = 0; index < StreamSiteVideoLink.length; index++) 
-	    {
-	    	var postresponse = showtime.httpReq(StreamSiteVideoLink[index], 
-	    	{
-		    	// Example: http://primeshare.tv/download/B78A79EA24
-	    		postdata:  {hash: StreamSiteVideoLink[index].split("/download/")[1]},
-		    	method: "POST"
-		    });
-
-	    	if(postresponse != null)
-	    	{	
-		    	// TODO: The PS3 seems to have problems with this file format
-		    	// The links do not give away the fileformat and therefor the PS3 has to probe it
-		    	// this results in some waiting time before the video playback starts
-		    	// Perhaps the filetype / videotype can be passed through to the playback system?
-		    	var videopattern = new RegExp("'http://j.primeshare.tv(.*?)'");
-			  	var linewithvars = videopattern.exec(postresponse.toString());
-			  	var vidLink = "http://j.primeshare.tv" + linewithvars[1] ;
-		    	
-		    	showtime.trace(vidLink);
-		        
-		    	ListOfLinks[ListOfLinks.length] = [StreamSiteVideoLink[index],vidLink];
-	    	}
-	    }
-	    
-	    return ListOfLinks;
-  }
-   // HOSTER RESOLVER END
- 
+  // Movshare -> resolver working / video working
   
   //---------------------------------------------------------------------------------------------------------------------
   
@@ -681,10 +243,47 @@
 		    
 	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
 	        	
-    	return [StreamSiteVideoLink,finallink[1]];//*/
+    	return [StreamSiteVideoLink,finallink[1]];
   }
   
-  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime"];
+  
+  //returns list [link, filelink] or null if no valid link
+  function resolveMovsharenet(StreamSiteVideoLink)
+  {
+	  	// it seems like the links to movshare miss the www
+	  	// we add this here cause otherwise the request would fail due to noFollow 
+	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
+	  	
+	  	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
+    	var getEmissionsResponse = showtime.httpReq(correctedlink,{noFollow:true,compression:true});
+    	try
+    	{
+	    	var cid = /flashvars.cid="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var key = /flashvars.filekey="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var file = /flashvars.file="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+    	}catch(e)
+    	{
+    		return null;
+    	}
+    	
+	    var postresponse = showtime.httpReq("http://www.movshare.net/api/player.api.php", {method: "GET" , args:{
+	    	user:"undefined",
+	    		cid3:"bs.to",
+	    		pass:"undefined",
+	    		cid:cid,
+	    		cid2:"undefined",
+	    		key:key,
+	    		file:file,
+	    		numOfErrors:"0"
+	    }});
+		    
+	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
+	        	
+    	return [StreamSiteVideoLink,finallink[1]];
+  }
+  
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare"];
   
   
   function resolveHoster(link, hostername)
@@ -715,6 +314,11 @@
 		if(hostername == "CloudTime")
 		{
 			FinalLink = resolveCloudtimeto(link);
+		}
+		// Movshare.net
+		if(hostername == "MovShare")
+		{
+			FinalLink = resolveMovsharenet(link);
 		}
 		
 		return FinalLink;
