@@ -30,7 +30,7 @@
   // INFO: Helpful Post Data reader: http://www.posttestserver.com/
   // Resolver-info: 
   // Streamcloud -> resolver working / video working
-  // Vivo -> resolver working / video not working
+  // Vivo -> resolver working / video not working (perhaps due to mp4 file format which has also shown bad performance at cloudtime)
   // FlashX -> resolver working / video working -> seems to have only english episodes?
   // Powerwatch -> resolver working / video working
   // Cloudtime -> resolver working / video working (Mobile mp4 version in code had bad performance)
