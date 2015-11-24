@@ -35,8 +35,8 @@
   // Vivo -> resolver working / video not working
   // FlashX -> resolver working / video working -> seems to have only english episodes?
   // Powerwatch -> resolver working / video working
-  // Cloudtime -> resolver working / video working (for mobile mp4 version) -> BAD PERFORMANCE!
-  // 			-> PROBLEM: PS3 Movian Request is identified as mobile platform and does not give the desktop page with data to the .flv link
+  // Cloudtime -> resolver working / video working (Mobile mp4 version in code had bad performance)
+  
   
   // HOSTER RESOLVER
   function resolveVodLockercom(StreamSiteVideoLink)
@@ -646,27 +646,22 @@
   //returns list [link, filelink] or null if no valid link
   function resolveCloudtimeto(StreamSiteVideoLink)
   {
-	  	// This gets the mobile version of the video file
-	  	// TODO: Due to some reason the desktop .flv file cannot be resolved
-	  	// the site does not give the correct response to the request 
-	  	// There also is an embed version embed.cloudtime.to/embed.php?v=b17a4e7553860 
-	    // but this does not give the desktop version either
-	  	var videohash= StreamSiteVideoLink.split("/");
+	  	// This gets the mobile version of the video file (mp4)
+	  	// due to bad performance this is not used
+	  	/*var videohash= StreamSiteVideoLink.split("/");
 	  	videohash = videohash[videohash.length-1];
   		getEmissionsResponse = showtime.httpGet("http://www.cloudtime.to/mobile/video.php?id="+videohash);
   	    var finallink = /<source src="(.*)" type="video\/mp4">/gi.exec(getEmissionsResponse.toString());
+    	return [StreamSiteVideoLink,finallink[1]];*/
     	
-    	return [StreamSiteVideoLink,finallink[1]];
-
     	
-    	// If the response is correct, this will handle the link resolve:
-    	
-    	/* 	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
-    	
+    	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
+    	var getEmissionsResponse = showtime.httpReq(StreamSiteVideoLink,{noFollow:true,compression:true});
+  		  	
     	try
     	{
 	    	var cid = /flashvars.cid="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
-	    	var key = /flashvars.key="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var key = /flashvars.filekey="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
 	    	var file = /flashvars.file="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
     	}catch(e)
     	{
@@ -677,7 +672,7 @@
 	    	user:"undefined",
 	    		cid3:"bs.to",
 	    		pass:"undefined",
-	    		cid:"1",
+	    		cid:cid,
 	    		cid2:"undefined",
 	    		key:key,
 	    		file:file,
@@ -686,7 +681,7 @@
 		    
 	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
 	        	
-    	return [StreamSiteVideoLink,finallink[1]];*/
+    	return [StreamSiteVideoLink,finallink[1]];//*/
   }
   
   var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime"];
