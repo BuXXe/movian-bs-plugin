@@ -30,6 +30,13 @@
   // TODO: do a check if any of the files in online and do the post request only if there are online ones
   // TODO: exchange httpget to httpreq
   // INFO: Helpful Post Data reader: http://www.posttestserver.com/
+  // Resolver-info: 
+  // Streamcloud -> resolver working / video working
+  // Vivo -> resolver working / video not working
+  // FlashX -> resolver working / video working -> seems to have only english episodes?
+  // Powerwatch -> resolver working / video working
+  // Cloudtime -> resolver working / video working (for mobile mp4 version) -> BAD PERFORMANCE!
+  // 			-> PROBLEM: PS3 Movian Request is identified as mobile platform and does not give the desktop page with data to the .flv link
   
   // HOSTER RESOLVER
   function resolveVodLockercom(StreamSiteVideoLink)
@@ -506,9 +513,183 @@
      	
     	return [StreamSiteVideoLink,res2[1]];
   }
+ 
+  //returns list [link, filelink] or null if no valid link
+  function resolveVivosx(StreamSiteVideoLink)
+  {
+	  	var postdata;
+	  	var validentries = false;
+	  	
+	  	// get form
+    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	
+    	var dom = html.parse(getEmissionsResponse.toString());
+		
+    	try{
+    		var hash = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+    		var timestamp = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[1].attributes.getNamedItem("value").value;
+    	}catch(e)
+    	{
+    		// there was an error so no valid links?
+    		return null
+    	}
+    	
+	    postdata = {hash: hash, timestamp: timestamp};
+	    
+	    // POST DATA COLLECTED
+	    // WAIT 8 SECONDS
+	    for (var i = 0; i < 9; i++) {
+	    	showtime.notify("Waiting " + (8-i).toString() +" Seconds",1);
+	        showtime.sleep(1);
+	    }
+	     
+	    // POSTING DATA
+	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
+		    	
+	    dom = html.parse(postresponse.toString());
+	    var link = dom.root.getElementByClassName('stream-content')[0].attributes.getNamedItem("data-url").value;
+	    // TODO: perhaps take the data-name attribute as first entry cause it shows the original filename
+	    
+    	return [StreamSiteVideoLink,link];
+  }
+ 
+  //returns list [link, filelink] or null if no valid link
+  function resolveFlashxtv(StreamSiteVideoLink)
+  {
+	  	var postdata;
+	  	
+    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	var res = [];
+    	
+    	try
+    	{
+	    	res[1] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+	    	res[2] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[1].attributes.getNamedItem("value").value;
+	    	res[3] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[2].attributes.getNamedItem("value").value;
+	    	res[4] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[3].attributes.getNamedItem("value").value;
+	    	res[5] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[4].attributes.getNamedItem("value").value;
+	    	res[6] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[5].attributes.getNamedItem("value").value;
+	    	res[7] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[6].attributes.getNamedItem("value").value;
+    	}
+    	catch(e)
+    	{
+    		// seems like the files is not available
+    		return null
+    	}
+
+    	postdata = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6],imhuman:res[7]};
+	    
+	    // POST DATA COLLECTED
+	    // WAIT 7 SECONDS
+	    for (var i = 0; i < 8; i++) {
+	    	showtime.notify("Waiting " + (7-i).toString() +" Seconds",1);
+	        showtime.sleep(1);
+	    }
+	     
+	    // POSTING DATA
+	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
+	     
+	    dom = html.parse(postresponse.toString());
+	    
+	    // put vid link together
+	    // get cdn server number and luq4 hash
+	    var cdn = dom.root.getElementById('vplayer').getElementByTagName("img")[0].attributes.getNamedItem("src").value;
+	    cdn = /.*thumb\.(.*)\.fx.*/gi.exec(cdn)[1]    	    	   
+	    var luqhash = /\|luq4(.*)\|play/gi.exec(postresponse.toString())[1];
+	    var finallink = "http://play."+cdn+".fx.fastcontentdelivery.com/luq4"+luqhash+"/normal.mp4";
+    	
+	    return [StreamSiteVideoLink,finallink];
+  }
   
+//returns list [link, filelink] or null if no valid link
+  function resolvePowerwatchpw(StreamSiteVideoLink)
+  {
+	  	var postdata;
+	  	
+    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	var res = [];
+    	
+    	try
+    	{
+	    	res[1] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+	    	res[2] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[1].attributes.getNamedItem("value").value;
+	    	res[3] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[2].attributes.getNamedItem("value").value;
+	    	res[4] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[3].attributes.getNamedItem("value").value;
+	    	res[5] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[4].attributes.getNamedItem("value").value;
+	    	res[6] = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[5].attributes.getNamedItem("value").value;
+    	}
+    	catch(e)
+    	{
+    		// seems like the files is not available
+    		return null
+    	}
+
+    	postdata = {op:res[1], usr_login:res[2], id: res[3],fname:res[4],referer: res[5],hash:res[6]};
+	    
+	    // POST DATA COLLECTED
+	    // WAIT 7 SECONDS
+	    for (var i = 0; i < 8; i++) {
+	    	showtime.notify("Waiting " + (7-i).toString() +" Seconds",1);
+	        showtime.sleep(1);
+	    }
+	     
+	    // POSTING DATA
+	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
+	     
+	    var finallink = /file:"(.*)",label/gi.exec(postresponse.toString())
+	    
+	    return [StreamSiteVideoLink,finallink[1]];
+  }
   
-  var availableResolvers=["Streamcloud"];
+  //returns list [link, filelink] or null if no valid link
+  function resolveCloudtimeto(StreamSiteVideoLink)
+  {
+	  	// This gets the mobile version of the video file
+	  	// TODO: Due to some reason the desktop .flv file cannot be resolved
+	  	// the site does not give the correct response to the request 
+	  	// There also is an embed version embed.cloudtime.to/embed.php?v=b17a4e7553860 
+	    // but this does not give the desktop version either
+	  	var videohash= StreamSiteVideoLink.split("/");
+	  	videohash = videohash[videohash.length-1];
+  		getEmissionsResponse = showtime.httpGet("http://www.cloudtime.to/mobile/video.php?id="+videohash);
+  	    var finallink = /<source src="(.*)" type="video\/mp4">/gi.exec(getEmissionsResponse.toString());
+    	
+    	return [StreamSiteVideoLink,finallink[1]];
+
+    	
+    	// If the response is correct, this will handle the link resolve:
+    	
+    	/* 	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	
+    	try
+    	{
+	    	var cid = /flashvars.cid="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var key = /flashvars.key="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+	    	var file = /flashvars.file="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+    	}catch(e)
+    	{
+    		return null;
+    	}
+    	
+	    var postresponse = showtime.httpReq("http://www.cloudtime.to/api/player.api.php", {method: "GET" , args:{
+	    	user:"undefined",
+	    		cid3:"bs.to",
+	    		pass:"undefined",
+	    		cid:"1",
+	    		cid2:"undefined",
+	    		key:key,
+	    		file:file,
+	    		numOfErrors:"0"
+	    }});
+		    
+	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
+	        	
+    	return [StreamSiteVideoLink,finallink[1]];*/
+  }
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime"];
   
   
   function resolveHoster(link, hostername)
@@ -519,6 +700,26 @@
 		if(hostername == "Streamcloud")
 		{
 			FinalLink = resolveStreamcloudeu(link);
+		}
+		// Vivo.sx
+		if(hostername == "Vivo")
+		{
+			FinalLink = resolveVivosx(link);
+		}
+		// FlashX.tv
+		if(hostername == "FlashX")
+		{
+			FinalLink = resolveFlashxtv(link);
+		}
+		// Powerwatch.pw
+		if(hostername == "PowerWatch")
+		{
+			FinalLink = resolvePowerwatchpw(link);
+		}
+		// Cloudtime.to
+		if(hostername == "CloudTime")
+		{
+			FinalLink = resolveCloudtimeto(link);
 		}
 		
 		return FinalLink;
@@ -536,7 +737,7 @@
 		var vidlink = resolveHoster(directlink, hostername)
 		if(vidlink == null)
     		page.appendPassiveItem('video', '', { title: "File is not available"  });
-		
+		else
 		page.appendItem(vidlink[1], 'video', { title: vidlink[0] });
   });
   
