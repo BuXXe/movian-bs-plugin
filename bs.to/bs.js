@@ -26,9 +26,7 @@
 (function(plugin) {
 
   var PLUGIN_PREFIX = "bs.to:";
-  // TODO: Search  
-  // TODO: do a check if any of the files in online and do the post request only if there are online ones
-  // TODO: exchange httpget to httpreq
+
   // INFO: Helpful Post Data reader: http://www.posttestserver.com/
   // Resolver-info: 
   // Streamcloud -> resolver working / video working
@@ -37,6 +35,8 @@
   // Powerwatch -> resolver working / video working
   // Cloudtime -> resolver working / video working (Mobile mp4 version in code had bad performance)
   // Movshare -> resolver working / video working
+  // NowVideo -> resolver working / video working
+  // VideoWeed -> resolver working / video working
   
   //---------------------------------------------------------------------------------------------------------------------
   
@@ -547,6 +547,43 @@
 	    	page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
 	    }
   });
+  
+//Search param indicates the search criteria: Artist, Album, Track
+  plugin.addURI(PLUGIN_PREFIX+":Search", function(page) {
+	  page.type="directory";
+  
+	  var res = showtime.textDialog("What series do you want to search for?", true,true);
+	  
+	  // check for user abort
+	  if(res.rejected)
+		  page.redirect(PLUGIN_PREFIX+"start");
+	  else
+	  {
+		  page.metadata.title = "Search for series containing: "+ res.input;
+		  var noEntry = true;
+		  var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
+		  var dom = html.parse(BrowseResponse.toString());
+		  	 
+		  var entries =  dom.root.getElementById('series-alphabet-list').getElementByTagName("li");
+
+		  for(var k=0; k< entries.length; k++)
+		  {
+			  var ancor = entries[k].getElementByTagName("a")[0];
+			  var title = ancor.textContent;
+			  if(title.toLowerCase().indexOf(res.input.toLowerCase())<0)
+				  continue;
+			  
+			  var streamLink  = ancor.attributes.getNamedItem("href").value;
+			  page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+			  noEntry=false;
+		  }
+		  		  
+		  if(noEntry == true)
+			  page.appendPassiveItem('video', '', { title: 'The search gave no results' });
+		  
+		page.loading = false;
+	  }
+  });
 
   // Register a service (will appear on home page)
   var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
@@ -558,9 +595,7 @@
   
     page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
 
-    //    page.appendItem(PLUGIN_PREFIX + ':Search','item',{
-    //		  title: "Search...",
-    //	});
+    page.appendItem(PLUGIN_PREFIX + ':Search','item',{ title: "Search...", });
     
 	page.loading = false;
   });
