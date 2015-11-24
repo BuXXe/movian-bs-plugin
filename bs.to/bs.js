@@ -38,6 +38,15 @@
   // NowVideo -> resolver working / video working
   // VideoWeed -> resolver working / video working
   
+  
+  	// Create / Get the storage for favorite series
+	var store = plugin.createStore('personalStorage', true)
+	
+	// Favorite series  
+	if (!store.favorites) {
+        store.favorites = "[]";
+    }
+  
   //---------------------------------------------------------------------------------------------------------------------
   
   // returns list [link, filelink] or null if no valid link
@@ -537,14 +546,26 @@
 	  	var dom = html.parse(BrowseResponse.toString());
 	  	 
 	  	var entries =  dom.root.getElementById('series-alphabet-list').getElementByTagName("li");
-
+	  	
 	  	for(var k=0; k< entries.length; k++)
 	    {
 	    	var ancor = entries[k].getElementByTagName("a")[0];
 	    	var streamLink  = ancor.attributes.getNamedItem("href").value;
 	    	var title = ancor.textContent;
    	
-	    	page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+	    	var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+	    	
+			item.addOptAction("Add series '" + title + "' to favorites", k);
+		    item.onEvent(k, function(item) 
+    		{
+    			var obj = showtime.JSONDecode(store.favorites);
+    			var ancor = entries[item].getElementByTagName("a")[0];
+    	    	var streamLink  = ancor.attributes.getNamedItem("href").value;
+    	    	var title = ancor.textContent;
+    			
+    			obj.push({link:streamLink, title:title});
+    			store.favorites = showtime.JSONEncode(obj);
+    		});
 	    }
   });
   
@@ -574,8 +595,21 @@
 				  continue;
 			  
 			  var streamLink  = ancor.attributes.getNamedItem("href").value;
-			  page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+			  var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
 			  noEntry=false;
+			  
+			  item.addOptAction("Add series '" + title + "' to favorites", k);
+			  item.onEvent(k, function(item) 
+					  {
+						var obj = showtime.JSONDecode(store.favorites);
+						var ancor = entries[item].getElementByTagName("a")[0];
+						var streamLink  = ancor.attributes.getNamedItem("href").value;
+						var title = ancor.textContent;
+						
+						obj.push({link:streamLink, title:title});
+						store.favorites = showtime.JSONEncode(obj);
+					  });
+			  
 		  }
 		  		  
 		  if(noEntry == true)
@@ -584,6 +618,37 @@
 		page.loading = false;
 	  }
   });
+  
+  
+  // Displays the favorite artists / albums / tracks
+  plugin.addURI(PLUGIN_PREFIX + ':DisplayFavorites', function(page) {
+	  	page.type = "directory";
+	    page.metadata.title = "Favorite series";
+	    	
+	    var list = showtime.JSONDecode(store.favorites);
+        if (!list || !list.toString()) {
+           page.error("Favorites list is empty");
+           return;
+        }
+        
+        for (var i in list) 
+        {
+        	var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ list[i].link, 'directory', { title: list[i].title });
+		    item.addOptAction("Remove '" + list[i].title + "' from My Favorites", i);
+		    item.onEvent(i, function(item) 
+    		{
+    			var obj = showtime.JSONDecode(store.favorites);
+    	   		obj.splice(item, 1);
+    	   		store.favorites = showtime.JSONEncode(obj);
+    			page.flush();
+    			page.redirect(PLUGIN_PREFIX + ':DisplayFavorites');
+    		});
+            
+        }
+  });
+  
+  
+  
 
   // Register a service (will appear on home page)
   var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
@@ -592,11 +657,9 @@
   plugin.addURI(PLUGIN_PREFIX+"start", function(page) {
     page.type = "directory";
     page.metadata.title = "bs.to Main Menu";
-  
     page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
-
+    page.appendItem(PLUGIN_PREFIX + ':DisplayFavorites','item',{ title: "Favorites", });
     page.appendItem(PLUGIN_PREFIX + ':Search','item',{ title: "Search...", });
-    
 	page.loading = false;
   });
 
