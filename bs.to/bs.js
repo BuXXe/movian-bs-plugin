@@ -40,6 +40,8 @@
   // YouWatch -> resolver not working 
   // Novamov -> resolver working / video working
   // Ecostream -> resolver working / video working
+  // Shared -> resolver working / video working
+  
   
   	// Create / Get the storage for favorite series
 	var store = plugin.createStore('personalStorage', true)
@@ -479,7 +481,46 @@
     	return [StreamSiteVideoLink,finallink];
   }
   
-  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov","Ecostream"];
+  //returns list [link, filelink] or null if no valid link
+  function resolveSharedsx(StreamSiteVideoLink)
+  {
+	  	var postdata;
+	  	
+    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	
+    	try {
+	    	var hash = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+		    var expires = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[1].attributes.getNamedItem("value").value;
+		    var timestamp = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[2].attributes.getNamedItem("value").value;
+    	}catch(e)
+	    {
+	    	return null;
+	    }
+    	
+    	postdata = {hash:hash,expires:expires, timestamp:timestamp};
+    	
+	    
+	    // POST DATA COLLECTED
+	    // WAIT 12 SECONDS
+	    for (var i = 0; i < 13; i++) {
+	    	showtime.notify("Waiting " + (12-i).toString() +" Seconds",1);
+	        showtime.sleep(1);
+	    }
+	     
+	    // POSTING DATA
+	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
+	    dom = html.parse(postresponse.toString());
+	    
+	    var finallink = dom.root.getElementByClassName('stream-content')[0].attributes.getNamedItem("data-url").value
+	    
+    	
+     	
+    	return [StreamSiteVideoLink,finallink];
+  }
+  
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov","Ecostream","Shared"];
   
   
   function resolveHoster(link, hostername)
@@ -536,7 +577,11 @@
 		{
 			FinalLink = resolveEcostreamtv(link);
 		}
-		
+		//Shared.sx
+		if(hostername == "Shared")
+		{
+			FinalLink = resolveSharedsx(link);
+		}
 		return FinalLink;
   }
   
