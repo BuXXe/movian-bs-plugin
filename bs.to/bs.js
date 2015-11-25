@@ -572,7 +572,6 @@
   //returns list [link, filelink] or null if no valid link
   function resolveFilenukecom(StreamSiteVideoLink)
   {
-	  	var postdata;
     	var getEmissionsResponse = showtime.httpReq(StreamSiteVideoLink,{noFollow:true,compression:true});
     	var dom = html.parse(getEmissionsResponse.toString());
     	var link= dom.root.getElementById('go-next').attributes.getNamedItem("href").value;
