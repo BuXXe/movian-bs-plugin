@@ -37,7 +37,7 @@
   // Movshare -> resolver working / video working
   // NowVideo -> resolver working / video working
   // VideoWeed -> resolver working / video working
-  
+  // YouWatch -> resolver not working 
   
   	// Create / Get the storage for favorite series
 	var store = plugin.createStore('personalStorage', true)
@@ -379,7 +379,27 @@
 	        	
     	return [StreamSiteVideoLink,finallink[1]];
   }
-  
+    
+  //returns list [link, filelink] or null if no valid link
+  function resolveYouwatchorg(StreamSiteVideoLink)
+  {
+	  	// TODO: Does not work because the streaming site uses iframes to integrate the videoplayer
+	    // for some reason, the iframe link cannot be requested and leads to a http error -1 in movian
+	  	var hash = StreamSiteVideoLink.split("/");
+	  	hash = hash[hash.length -1];
+    	
+    	var getEmissionsResponse = showtime.httpReq("http://youwatch.org/embed-"+hash+".html",{noFollow:true,compression:true});
+    	showtime.trace(getEmissionsResponse.toString());
+
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	var link = dom.root.getElementByTagName("iframe")[0].attributes.getNamedItem("src").value;
+    	var number = link.split("?")[1];
+    	link = link.split("?")[0];
+
+    	getEmissionsResponse = showtime.httpReq(link,{noFollow:true,compression:true});
+    	showtime.trace(getEmissionsResponse.toString());
+    	return null;
+  }
   
   var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed"];
   
@@ -609,7 +629,6 @@
 						obj.push({link:streamLink, title:title});
 						store.favorites = showtime.JSONEncode(obj);
 					  });
-			  
 		  }
 		  		  
 		  if(noEntry == true)
@@ -646,9 +665,7 @@
             
         }
   });
-  
-  
-  
+
 
   // Register a service (will appear on home page)
   var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
