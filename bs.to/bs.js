@@ -262,7 +262,8 @@
   //returns list [link, filelink] or null if no valid link
   function resolveMovsharenet(StreamSiteVideoLink)
   {
-	  	// it seems like the links to movshare miss the www
+	  	// OLD Resolver
+	  	/*// it seems like the links to movshare miss the www
 	  	// we add this here cause otherwise the request would fail due to noFollow 
 	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
 	  	
@@ -291,7 +292,58 @@
 		    
 	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
 	        	
-    	return [StreamSiteVideoLink,finallink[1]];
+    	return [StreamSiteVideoLink,finallink[1]];*/
+		// it seems like the links to nowvideo miss the www
+	  	// we add this here cause otherwise the request would fail due to noFollow 
+	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
+	  	var postdata;
+
+	  	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
+	  	var getEmissionsResponse = showtime.httpReq(correctedlink,{noFollow:true,compression:true});
+	  	
+	  	var dom = html.parse(getEmissionsResponse.toString());
+	  	var stepkey;
+	  	
+	  	try
+	  	{
+	  		stepkey = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+	  	}
+	  	catch(e)
+	  	{
+	  		// seems like the file is not available
+	  		return null
+	  	}
+	
+	  	postdata = {stepkey:stepkey};
+		     
+		    // POSTING DATA
+		    var postresponse = showtime.httpReq(correctedlink, {noFollow:true,compression:true,postdata: postdata, method: "POST" });
+		    
+		    try
+	  	{
+		    	var cid = /flashvars.cid="(.*)";/gi.exec(postresponse.toString())[1];
+		    	var key = /flashvars.filekey="(.*)";/gi.exec(postresponse.toString())[1];
+		    	var file = /flashvars.file="(.*)";/gi.exec(postresponse.toString())[1];
+	  	}catch(e)
+	  	{
+	  		return null;
+	  	}
+	  	
+		    var postresponse = showtime.httpReq("http://www.movshare.net/api/player.api.php", {method: "GET" , args:{
+		    	user:"undefined",
+		    		cid3:"bs.to",
+		    		pass:"undefined",
+		    		cid:cid,
+		    		cid2:"undefined",
+		    		key:key,
+		    		file:file,
+		    		numOfErrors:"0"
+		    }});
+			    
+		    var finallink = /url=(.*)&title/.exec(postresponse.toString());
+		        	
+	  	return [StreamSiteVideoLink,finallink[1]];
+	  
   }
   
   //returns list [link, filelink] or null if no valid link
@@ -500,7 +552,6 @@
 	    }
     	
     	postdata = {hash:hash,expires:expires, timestamp:timestamp};
-    	
 	    
 	    // POST DATA COLLECTED
 	    // WAIT 12 SECONDS
@@ -514,12 +565,9 @@
 	    dom = html.parse(postresponse.toString());
 	    
 	    var finallink = dom.root.getElementByClassName('stream-content')[0].attributes.getNamedItem("data-url").value
-	    
-    	
-     	
+
     	return [StreamSiteVideoLink,finallink];
   }
-  
   
   //returns list [link, filelink] or null if no valid link
   function resolveFilenukecom(StreamSiteVideoLink)
