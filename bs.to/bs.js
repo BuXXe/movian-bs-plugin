@@ -293,7 +293,7 @@
 	    var finallink = /url=(.*)&title/.exec(postresponse.toString());
 	        	
     	return [StreamSiteVideoLink,finallink[1]];*/
-		// it seems like the links to nowvideo miss the www
+		// it seems like the links to Movshare miss the www
 	  	// we add this here cause otherwise the request would fail due to noFollow 
 	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
 	  	var postdata;
