@@ -39,7 +39,7 @@
   // VideoWeed -> resolver working / video working
   // YouWatch -> resolver not working 
   // Novamov -> resolver working / video working
-  
+  // Ecostream -> resolver working / video working
   
   	// Create / Get the storage for favorite series
 	var store = plugin.createStore('personalStorage', true)
@@ -410,8 +410,6 @@
 	  	// we add this here cause otherwise the request would fail due to noFollow 
 	  	var correctedlink = StreamSiteVideoLink.replace("http://","http://www.");
 	  	var postdata;
-
-	  	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
     	var getEmissionsResponse = showtime.httpReq(correctedlink,{noFollow:true,compression:true});
     	
     	var dom = html.parse(getEmissionsResponse.toString());
@@ -458,7 +456,30 @@
     	return [StreamSiteVideoLink,finallink[1]];
   }
   
-  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov"];
+  //returns list [link, filelink] or null if no valid link
+  function resolveEcostreamtv(StreamSiteVideoLink)
+  {
+	  	var postdata;
+    	var getEmissionsResponse = showtime.httpReq(StreamSiteVideoLink,{noFollow:true,compression:true});
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	
+    	var dataid= dom.root.getElementById('play').attributes.getNamedItem("data-id").value;
+    	var footerhash = /var footerhash='(.*)';/gi.exec(getEmissionsResponse.toString())[1];
+    	var superslots = /var superslots='(.*)';/gi.exec(getEmissionsResponse.toString())[1];
+    	
+    	postdata = {id:dataid,tpm:footerhash+superslots};
+
+	    // POSTING DATA
+    	// Important thing here: we need the header addition otherwise we get a 404
+	    var postresponse = showtime.httpReq("http://www.ecostream.tv/xhr/videos/wOIriO01", {headers:{'X-Requested-With':'XMLHttpRequest'},compression:true,postdata: postdata, method: "POST" });
+	    
+	    // we are getting json back
+	    var finallink = "http://www.ecostream.tv"+showtime.JSONDecode(postresponse.toString()).url;
+	        	
+    	return [StreamSiteVideoLink,finallink];
+  }
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov","Ecostream"];
   
   
   function resolveHoster(link, hostername)
@@ -510,7 +531,11 @@
 		{
 			FinalLink = resolveNovamowcom(link);
 		}
-		
+		// Ecostream.tv
+		if(hostername == "Ecostream")
+		{
+			FinalLink = resolveEcostreamtv(link);
+		}
 		
 		return FinalLink;
   }
