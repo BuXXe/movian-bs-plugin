@@ -41,6 +41,7 @@
   // Novamov -> resolver working / video working
   // Ecostream -> resolver working / video working
   // Shared -> resolver working / video working
+  // Filenuke -> resolver working / video not working 
   
   
   	// Create / Get the storage for favorite series
@@ -520,7 +521,19 @@
   }
   
   
-  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov","Ecostream","Shared"];
+  //returns list [link, filelink] or null if no valid link
+  function resolveFilenukecom(StreamSiteVideoLink)
+  {
+	  	var postdata;
+    	var getEmissionsResponse = showtime.httpReq(StreamSiteVideoLink,{noFollow:true,compression:true});
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	var link= dom.root.getElementById('go-next').attributes.getNamedItem("href").value;
+    	var postresponse = showtime.httpReq("http://filenuke.com"+link, {noFollow:true,compression:true});
+	    var finallink = /var lnk234 = '(.*)';/gi.exec(postresponse.toString())[1];
+    	return [StreamSiteVideoLink,finallink];
+  }
+  
+  var availableResolvers=["Streamcloud","Vivo", "FlashX","PowerWatch","CloudTime","MovShare","NowVideo","VideoWeed","Novamov","Ecostream","Shared","FileNuke"];
   
   
   function resolveHoster(link, hostername)
@@ -577,11 +590,17 @@
 		{
 			FinalLink = resolveEcostreamtv(link);
 		}
-		//Shared.sx
+		// Shared.sx
 		if(hostername == "Shared")
 		{
 			FinalLink = resolveSharedsx(link);
 		}
+		// FileNuke.com
+		if(hostername == "FileNuke")
+		{
+			FinalLink = resolveFilenukecom(link);
+		}
+		
 		return FinalLink;
   }
   
