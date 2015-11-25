@@ -22,5 +22,9 @@ Favorite list: You can add series to the favorite list via their corresponding s
 * Movshare - resolver working / video working
 * NowVideo - resolver working / video working
 * VideoWeed - resolver working / video working
-
+* YouWatch -> resolver not working 
+* Novamov -> resolver working / video working
+* Ecostream -> resolver working / video working
+* Shared -> resolver working / video working
+* Filenuke -> resolver working / video not working 
 
