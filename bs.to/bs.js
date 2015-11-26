@@ -477,7 +477,7 @@
   }
   
   //returns list [link, filelink] or null if no valid link
-  function resolveNovamowcom(StreamSiteVideoLink)
+  function resolveNovamovcom(StreamSiteVideoLink)
   {
 	  	// it seems like the links to novamov miss the www
 	  	// we add this here cause otherwise the request would fail due to noFollow 
@@ -648,7 +648,7 @@
 		// Novamov.com
 		if(hostername == "Novamov")
 		{
-			FinalLink = resolveNovamowcom(link);
+			FinalLink = resolveNovamovcom(link);
 		}
 		// Ecostream.tv
 		if(hostername == "Ecostream")
