@@ -410,12 +410,30 @@
     	
 	  	// The Request needs to have specific parameters, otherwise the response object is the mobile version of the page
     	var getEmissionsResponse = showtime.httpReq(correctedlink,{noFollow:true,compression:true});
-  		  	
+    	
+    	var dom = html.parse(getEmissionsResponse.toString());
+    	var stepkey;
+    	
     	try
     	{
-	    	var cid = /flashvars.cid="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
-	    	var key = /flashvars.filekey="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
-	    	var file = /flashvars.file="(.*)";/gi.exec(getEmissionsResponse.toString())[1];
+    		stepkey = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
+    	}
+    	catch(e)
+    	{
+    		// seems like the file is not available
+    		return null
+    	}
+
+    	postdata = {stepkey:stepkey};
+	     
+	    // POSTING DATA
+	    var postresponse = showtime.httpReq(correctedlink, {noFollow:true,compression:true,postdata: postdata, method: "POST" });
+
+    	try
+    	{
+	    	var cid = /flashvars.cid="(.*)";/gi.exec(postresponse.toString())[1];
+	    	var key = /flashvars.filekey="(.*)";/gi.exec(postresponse.toString())[1];
+	    	var file = /flashvars.file="(.*)";/gi.exec(postresponse.toString())[1];
     	}catch(e)
     	{
     		return null;
