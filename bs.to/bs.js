@@ -172,7 +172,8 @@
 	    // get cdn server number and luq4 hash
 	    var cdn = dom.root.getElementById('vplayer').getElementByTagName("img")[0].attributes.getNamedItem("src").value;
 	    cdn = /.*thumb\.(.*)\.fx.*/gi.exec(cdn)[1]    	    	   
-	    var luqhash = /\|luq4(.*)\|play/gi.exec(postresponse.toString())[1];
+	    // TODO: perhaps allow other quality settings -> here we always take normal
+	    var luqhash = /normal\|luq4(.*?)\|/gi.exec(postresponse.toString())[1];
 	    var finallink = "http://play."+cdn+".fx.fastcontentdelivery.com/luq4"+luqhash+"/normal.mp4";
     	
 	    return [StreamSiteVideoLink,finallink];
