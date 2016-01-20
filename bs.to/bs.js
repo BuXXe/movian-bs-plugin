@@ -1,7 +1,7 @@
 /**
  * Movian plugin to watch bs.to streams 
  *
- * Copyright (C) 2015 BuXXe
+ * Copyright (C) 2015-2016 BuXXe
  *
  *     This file is part of bs.to Movian plugin.
  *
