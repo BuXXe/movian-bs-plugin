@@ -28,3 +28,6 @@ Favorite list: You can add series to the favorite list via their corresponding s
 * Shared -> resolver working / video working
 * Filenuke -> resolver working / video not working 
 
+# Fixes since previous version:
+* fixed a bug with the favorite lists where using umlaut in titles resulted in deletion of favorite list.
+* added titles for season, episode and episode-host pages
