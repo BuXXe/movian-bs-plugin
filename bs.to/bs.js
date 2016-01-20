@@ -799,13 +799,14 @@
     			var obj = showtime.JSONDecode(store.favorites);
     			var ancor = entries[item].getElementByTagName("a")[0];
     	    	var streamLink  = ancor.attributes.getNamedItem("href").value;
-    	    	var title = ancor.textContent;
+    	    	var title = encode_utf8(ancor.textContent);
     			
     			obj.push({link:streamLink, title:title});
     			store.favorites = showtime.JSONEncode(obj);
     		});
 	    }
   });
+  
   
 //Search param indicates the search criteria: Artist, Album, Track
   plugin.addURI(PLUGIN_PREFIX+":Search", function(page) {
@@ -842,7 +843,7 @@
 						var obj = showtime.JSONDecode(store.favorites);
 						var ancor = entries[item].getElementByTagName("a")[0];
 						var streamLink  = ancor.attributes.getNamedItem("href").value;
-						var title = ancor.textContent;
+						var title = encode_utf8(ancor.textContent);
 						
 						obj.push({link:streamLink, title:title});
 						store.favorites = showtime.JSONEncode(obj);
@@ -870,8 +871,8 @@
         
         for (var i in list) 
         {
-        	var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ list[i].link, 'directory', { title: list[i].title });
-		    item.addOptAction("Remove '" + list[i].title + "' from My Favorites", i);
+        	var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ list[i].link, 'directory', { title: decode_utf8(list[i].title )});
+		    item.addOptAction("Remove '" + decode_utf8(list[i].title ) + "' from My Favorites", i);
 		    item.onEvent(i, function(item) 
     		{
     			var obj = showtime.JSONDecode(store.favorites);
@@ -884,6 +885,14 @@
         }
   });
 
+  
+  function encode_utf8(s) {
+	  return encodeURI(s);
+	}
+
+  function decode_utf8(s) {
+	  return decodeURI(s);
+	}
 
   // Register a service (will appear on home page)
   var service = plugin.createService("bs.to", PLUGIN_PREFIX+"start", "video", true, plugin.path + "bs.png");
