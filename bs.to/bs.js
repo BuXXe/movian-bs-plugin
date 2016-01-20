@@ -674,7 +674,11 @@
   // resolves the hoster link and gives the final link to the stream file
   plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink, hostername){
 	  	page.type = 'directory';
-
+	  	// get the series title, season and episode number
+		// seasonlink is serie/seriesname/seasonnumber/episodename
+		page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
+	  	
+	  	
 		var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 		var directlink = dom.root.getElementById('video_actions').getElementByTagName("a")[0].attributes.getNamedItem("href").value;
@@ -700,6 +704,9 @@
   
   plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
 	  page.type = 'directory';
+	  // get the series title, season and episode number
+	  // seasonlink is serie/seriesname/seasonnumber/episodename
+	  page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3]; 
 
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
@@ -731,6 +738,9 @@
   // Lists the available episodes for a given season
   plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
 	  page.type = 'directory';
+	  // get the series title and season
+	  // seasonlink is serie/seriesname/seasonnumber
+	  page.metadata.title = seasonLink.split("/")[1] + " - Season "+seasonLink.split("/")[2]; 
 	  
 	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
 	  var dom = html.parse(SeasonResponse.toString());
