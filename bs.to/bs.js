@@ -793,7 +793,7 @@
 	  	var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
 	  	var dom = html.parse(BrowseResponse.toString());
 	  	 
-	  	var entries =  dom.root.getElementById('series-alphabet-list').getElementByTagName("li");
+	  	var entries =  dom.root.getElementById('seriesContainer').getElementByTagName("li");
 	  	
 	  	for(var k=0; k< entries.length; k++)
 	    {
@@ -834,7 +834,7 @@
 		  var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
 		  var dom = html.parse(BrowseResponse.toString());
 		  	 
-		  var entries =  dom.root.getElementById('series-alphabet-list').getElementByTagName("li");
+		  var entries =  dom.root.getElementById('seriesContainer').getElementByTagName("li");
 
 		  for(var k=0; k< entries.length; k++)
 		  {
