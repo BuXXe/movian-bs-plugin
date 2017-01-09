@@ -22,7 +22,8 @@
  *
  */
    var html = require('showtime/html');
-
+   var resolvers  = require('./libs/hoster-resolution-library/hrl');
+   
 (function(plugin) {
 
   var PLUGIN_PREFIX = "bs.to:";
@@ -90,43 +91,31 @@
     	return [StreamSiteVideoLink,res2[1]];
   }
  
+
+  
+  
   //returns list [link, filelink] or null if no valid link
   function resolveVivosx(StreamSiteVideoLink)
   {
-	  	var postdata;
-	  	var validentries = false;
-	  	
-	  	// get form
-    	var getEmissionsResponse = showtime.httpGet(StreamSiteVideoLink);
-    	
-    	var dom = html.parse(getEmissionsResponse.toString());
-		
-    	try{
-    		var hash = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[0].attributes.getNamedItem("value").value;
-    		var timestamp = dom.root.getElementByTagName('form')[0].getElementByTagName("input")[1].attributes.getNamedItem("value").value;
-    	}catch(e)
-    	{
-    		// there was an error so no valid links?
-    		return null
-    	}
-    	
-	    postdata = {hash: hash, timestamp: timestamp};
-	    
-	    // POST DATA COLLECTED
-	    // WAIT 8 SECONDS
-	    for (var i = 0; i < 9; i++) {
-	    	showtime.notify("Waiting " + (8-i).toString() +" Seconds",1);
-	        showtime.sleep(1);
-	    }
-	     
-	    // POSTING DATA
-	    var postresponse = showtime.httpReq(StreamSiteVideoLink, { postdata: postdata, method: "POST" });
-		    	
-	    dom = html.parse(postresponse.toString());
-	    var link = dom.root.getElementByClassName('stream-content')[0].attributes.getNamedItem("data-url").value;
-	    // TODO: perhaps take the data-name attribute as first entry cause it shows the original filename
-	    
-    	return [StreamSiteVideoLink,link];
+	 	var responsse = showtime.httpReq(StreamSiteVideoLink,{
+			  compression: true,
+			  noFollow:false,
+			  method: "GET",
+			});
+	  	try
+	  	{
+		  	var re = /Core\.InitializeStream \(\'(.*?)\'\)/g;
+		  	var res2 = re.exec(responsse.toString());
+	    	var ob = showtime.JSONDecode(Base64.decode(res2[1]))
+	  	}
+	  	catch(e)
+	  	{
+	  		return null;
+	  	}
+	  	if(ob[0])
+	  		return [StreamSiteVideoLink,ob[0]];
+	  	else
+	  		return null;
   }
  
   //returns list [link, filelink] or null if no valid link
@@ -614,7 +603,8 @@
 		// Vivo.sx
 		if(hostername == "Vivo")
 		{
-			FinalLink = resolveVivosx(link);
+			//FinalLink = resolveVivosx(link);
+			FinalLink = resolvers.vivo(link);
 		}
 		// FlashX.tv
 		if(hostername == "FlashX")

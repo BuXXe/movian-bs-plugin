@@ -1,0 +1,3 @@
+[submodule "bs.to/libs/hoster-resolution-library"]
+	path = bs.to/libs/hoster-resolution-library
+	url = https://github.com/BuXXe/hoster-resolution-library
