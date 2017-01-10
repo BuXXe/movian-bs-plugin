@@ -11,20 +11,3 @@ As this plugin was initially only meant for personal usage, bug fixes and additi
 
 
 Favorite list: You can add series to the favorite list via their corresponding submenu.
-
-
-# Current hoster-resolution info:
-* Streamcloud - resolver working / video working
-* Vivo - resolver working / video not working (perhaps due to mp4 file format which has also shown bad performance at cloudtime)
-* FlashX - resolver working / video working -> seems to have only english episodes?
-* Powerwatch - resolver working / video working
-* Cloudtime - resolver working / video working (Mobile mp4 version in code had bad performance)
-* Movshare - resolver working / video working
-* NowVideo - resolver working / video working
-* VideoWeed - resolver working / video working
-* YouWatch -> resolver not working 
-* Novamov -> resolver working / video working
-* Ecostream -> resolver working / video working
-* Shared -> resolver working / video working
-* Filenuke -> resolver working / video not working 
-
