@@ -74,16 +74,17 @@
 	    	var hosterlink  = hosters[k].attributes.getNamedItem("href").value;
 	    	
 	    	var resolverstatus = resolvers.check(hostname);
+	    	var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
 	    	
-	    	if(resolverstatus.indexOf("Not Working")>1)
+	    	if(resolverstatus)
 	    	{
-	    		page.appendPassiveItem('video', '', { title: new showtime.RichText(hostname + resolverstatus)  });
+	    		page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname , 'directory', {
+					  title: new showtime.RichText(hostname + statusmessage) 
+				  });
 	    	}
 	    	else
 	    	{
-				page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname , 'directory', {
-					  title: new showtime.RichText(hostname + resolverstatus) 
-				  });
+	    		page.appendPassiveItem('video', '', { title: new showtime.RichText(hostname + statusmessage)  });
 	    	}
 	    }
   });
