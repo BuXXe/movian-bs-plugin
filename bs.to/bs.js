@@ -38,15 +38,15 @@
   
   // resolves the hoster link and gives the final link to the stream file
   plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink, hostername){
-	  	page.type = 'directory';
+	  page.metadata.icon = Plugin.path + 'bs.png';	
+	  page.type = 'directory';
 	  	// get the series title, season and episode number
 		// seasonlink is serie/seriesname/seasonnumber/episodename
 		page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
 	  	
-	  	
 		var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
-		var directlink = dom.root.getElementById('video_actions').getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+		var directlink = dom.root.getElementByClassName('hoster-player')[0].attributes.getNamedItem("href").value;
 
 		var vidlink = resolvers.resolve(directlink, hostername)
 		if(vidlink == null)
@@ -56,6 +56,7 @@
   });
   
   plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
+	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
 	  // get the series title, season and episode number
 	  // seasonlink is serie/seriesname/seasonnumber/episodename
@@ -64,14 +65,12 @@
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 	  	
-		// we have the episodes page and the li with class "current" which is the current season and the other is current episode
-		var hosters = dom.root.getElementByClassName('current')[1].getElementByTagName("a");
-	  	
-		// first anchor is the current episode, the rest are hoster links
-		for(var k=1; k< hosters.length; k++)
+		var hosters = dom.root.getElementByClassName('hoster-tabs')[0].getElementByTagName("li");
+		
+		for(var k=0; k< hosters.length; k++)
 	    {
-	    	var hostname = hosters[k].attributes.getNamedItem("class").value.replace("v-centered icon ","");
-	    	var hosterlink  = hosters[k].attributes.getNamedItem("href").value;
+	    	var hostname = hosters[k].getElementByTagName("span")[0].attributes.getNamedItem("class").value.replace("icon ","");
+	    	var hosterlink  = hosters[k].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
 	    	
 	    	var resolverstatus = resolvers.check(hostname);
 	    	var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
@@ -91,6 +90,7 @@
   
   // Lists the available episodes for a given season
   plugin.addURI(PLUGIN_PREFIX + ":SeasonHandler:(.*)", function(page,seasonLink){
+	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
 	  // get the series title and season
 	  // seasonlink is serie/seriesname/seasonnumber
@@ -98,39 +98,49 @@
 	  
 	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
 	  var dom = html.parse(SeasonResponse.toString());
-	  var tablerows = dom.root.getElementById('sp_left').getElementByTagName("table")[0].getElementByTagName("tr");
+	  var tablerows = dom.root.getElementByClassName('episodes')[0].getElementByTagName("tr");
 	  
-	  // ignore first header row
-	  for (var i = 1; i < tablerows.length;i++)
+	  for (var i = 0; i < tablerows.length;i++)
 	  {
-		  var episodeNumber = tablerows[i].getElementByTagName("td")[0].textContent;
-		  var episodeLink = tablerows[i].getElementByTagName("td")[1].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
-		  
-		  // TODO: use real entry instead of create from href. Problem so far: <strong> and <span> tags 
-		  var episodename = episodeLink.split("/")[episodeLink.split("/").length-1];
+		  var episodeNumber = tablerows[i].getElementByTagName("td")[0].getElementByTagName("a")[0].textContent;
+		  var episodeLink = tablerows[i].getElementByTagName("td")[0].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+		   
+		  // Titles:
+		  // strong tag for german 
+		  // i tag for english
+		  var a,b=undefined;
+		  try{
+			  a = tablerows[i].getElementByTagName("td")[1].getElementByTagName("strong")[0].textContent;
+		  }catch(e)
+		  {showtime.trace("no german title");}
+		  try{
+			  b = tablerows[i].getElementByTagName("td")[1].getElementByTagName("i")[0].textContent;
+		  }catch(e)
+		  {showtime.trace("no english title");}
+		 
+		  var Titles = a ? (b? a + " - " + b : a) : b;
 		  
 		  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
-			  title: "Episode " + episodename
+			  title: "Episode " + episodeNumber + " " + Titles
 		  });
 	  }
   });
   
   // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
+	  	page.metadata.icon = Plugin.path + 'bs.png';
 	  	page.loading = false;
 	  	page.type = 'directory';
 	  	page.metadata.title = series.split("serie/")[1];
 
 	    var seriespageresponse = showtime.httpGet('http://bs.to/'+series);
 	  	var dom = html.parse(seriespageresponse.toString());
-	  	var pages = dom.root.getElementById('sp_left').getElementByClassName("pages")[0].getElementByTagName("li");
+	  	var seasons = dom.root.getElementById('seasons').getElementByTagName("a");
 	  	
-	  	// INFO: all entries are seasons except for the last one which is a random episode link
-    	for (var k = 0; k< pages.length-1; k++)
+    	for (var k = 0; k< seasons.length; k++)
     	{	
-    		var ancor = pages[k].getElementByTagName("a")[0];
-    		var seasonNumber = ancor.textContent;
-    		var seasonLink = ancor.attributes.getNamedItem("href").value;
+    		var seasonNumber = seasons[k].textContent;
+    		var seasonLink = seasons[k].attributes.getNamedItem("href").value;
     		
     		page.appendItem(PLUGIN_PREFIX + ":SeasonHandler:"+ seasonLink, 'directory', {
     			  title: "Season " + seasonNumber
@@ -141,6 +151,7 @@
   
   // Shows a list of all series alphabetically 
   plugin.addURI(PLUGIN_PREFIX + ':Browse', function(page) {
+	  	page.metadata.icon = Plugin.path + 'bs.png';	
 	  	page.type = "directory";
 	    page.metadata.title = "bs.to series list";
 	    
@@ -172,8 +183,8 @@
   });
   
   
-//Search param indicates the search criteria: Artist, Album, Track
   plugin.addURI(PLUGIN_PREFIX+":Search", function(page) {
+	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type="directory";
   
 	  var res = showtime.textDialog("What series do you want to search for?", true,true);
@@ -224,6 +235,7 @@
   
   // Displays the favorite artists / albums / tracks
   plugin.addURI(PLUGIN_PREFIX + ':DisplayFavorites', function(page) {
+	  	page.metadata.icon = Plugin.path + 'bs.png';
 	  	page.type = "directory";
 	    page.metadata.title = "Favorite series";
 	    	
@@ -263,7 +275,8 @@
   
   // Register Start Page
   plugin.addURI(PLUGIN_PREFIX+"start", function(page) {
-    page.type = "directory";
+	page.metadata.icon = Plugin.path + 'bs.png';
+	page.type = "directory";
     page.metadata.title = "bs.to Main Menu";
     page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
     page.appendItem(PLUGIN_PREFIX + ':DisplayFavorites','item',{ title: "Favorites", });
