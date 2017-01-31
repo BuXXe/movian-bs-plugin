@@ -108,7 +108,8 @@
 		  // Titles:
 		  // strong tag for german 
 		  // i tag for english
-		  var a,b=undefined;
+		  var a=undefined;
+		  var b=undefined;
 		  try{
 			  a = tablerows[i].getElementByTagName("td")[1].getElementByTagName("strong")[0].textContent;
 		  }catch(e)
