@@ -1,7 +1,7 @@
 /**
  * Movian plugin to watch bs.to streams
  *
- * Copyright (C) 2015-2017 BuXXe
+ * Copyright (C) 2015-2018 BuXXe
  *
  *     This file is part of bs.to Movian plugin.
  *
@@ -85,8 +85,15 @@
 		var vidlink = resolvers.resolve(directlink, hostername)
 		if(vidlink == null)
     		page.appendPassiveItem('video', '', { title: "File is not available"  });
-		else
-		page.appendItem(vidlink[1], 'video', { title: vidlink[0] });
+		else {
+      if (vidlink.length == 2) {
+        page.redirect(vidlink[1]);
+      } else {
+        for (var i = 0; i < vidlink.length; i += 2) {
+          page.appendItem(vidlink[i+1], 'video', { title: vidlink[i+0] });
+        }
+      }
+    }
   });
 
   plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
