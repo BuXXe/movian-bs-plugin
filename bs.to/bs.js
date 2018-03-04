@@ -60,7 +60,7 @@
   });
 
   // resolves the hoster link and gives the final link to the stream file
-  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink, hostername){
+  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*):(.*)", function(page,episodeLink, hostername, canonical){
 	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
 	  	// get the series title, season and episode number
@@ -87,10 +87,20 @@
     		page.appendPassiveItem('video', '', { title: "File is not available"  });
 		else {
       if (vidlink.length == 2) {
-        page.redirect(vidlink[1]);
+        page.redirect('videoparams:' + showtime.JSONEncode({
+          canonicalUrl: PLUGIN_PREFIX + ':ShowHostsForEpisode:' + canonical,
+          sources: [{
+            url: vidlink[1]
+          }]
+        }));
       } else {
         for (var i = 0; i < vidlink.length; i += 2) {
-          page.appendItem(vidlink[i+1], 'video', { title: vidlink[i+0] });
+          page.appendItem('videoparams:' + showtime.JSONEncode({
+            canonicalUrl: PLUGIN_PREFIX + ':ShowHostsForEpisode:' + canonical,
+            sources: [{
+              url: vidlink[i+1]
+            }]
+          }), 'video', { title: vidlink[i+0] });
         }
       }
     }
@@ -118,7 +128,7 @@
 
 	    	if(resolverstatus)
 	    	{
-	    		page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname , 'directory', {
+	    		page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname+":"+episodeLink , 'directory', {
 					  title: new showtime.RichText(hostname + statusmessage)
 				  });
 	    	}
@@ -162,7 +172,7 @@
 
 		  var Titles = a ? (b? a + " - " + b : a) : b;
 
-		  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
+      page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'video', {
 			  title: "Episode " + episodeNumber + " " + Titles
 		  });
 	  }
