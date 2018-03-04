@@ -235,53 +235,43 @@
   });
 
 
-  plugin.addURI(PLUGIN_PREFIX+":Search", function(page) {
-	  page.metadata.icon = Plugin.path + 'bs.png';
-	  page.type="directory";
+  plugin.addURI(PLUGIN_PREFIX+":Search:(.*)", function(page, searchquery) {
+    page.metadata.icon = Plugin.path + 'bs.png';
+    page.type = "directory";
+    page.loading = true;
 
-	  var res = showtime.textDialog("What series do you want to search for?", true,true);
+    page.metadata.title = "Search for series containing: "+ searchquery;
+    var noEntry = true;
+    var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
+    var dom = html.parse(BrowseResponse.toString());
 
-	  // check for user abort
-	  if(res.rejected)
-		  page.redirect(PLUGIN_PREFIX+"start");
-	  else
-	  {
-		  page.metadata.title = "Search for series containing: "+ res.input;
-		  var noEntry = true;
-		  var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
-		  var dom = html.parse(BrowseResponse.toString());
+    var entries = dom.root.getElementById('seriesContainer').getElementByTagName("li");
 
-		  var entries =  dom.root.getElementById('seriesContainer').getElementByTagName("li");
+    for(var k=0; k< entries.length; k++) {
+      var ancor = entries[k].getElementByTagName("a")[0];
+      var title = ancor.textContent;
+      if(title.toLowerCase().indexOf(searchquery.toLowerCase())<0)
+        continue;
 
-		  for(var k=0; k< entries.length; k++)
-		  {
-			  var ancor = entries[k].getElementByTagName("a")[0];
-			  var title = ancor.textContent;
-			  if(title.toLowerCase().indexOf(res.input.toLowerCase())<0)
-				  continue;
+      var streamLink  = ancor.attributes.getNamedItem("href").value;
+      var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+      noEntry=false;
 
-			  var streamLink  = ancor.attributes.getNamedItem("href").value;
-			  var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
-			  noEntry=false;
+      item.addOptAction("Add series '" + title + "' to favorites", k);
+      item.onEvent(k, function(item) {
+        var obj = showtime.JSONDecode(store.favorites);
+        var ancor = entries[item].getElementByTagName("a")[0];
+        var streamLink  = ancor.attributes.getNamedItem("href").value;
+        var title = encode_utf8(ancor.textContent);
 
-			  item.addOptAction("Add series '" + title + "' to favorites", k);
-			  item.onEvent(k, function(item)
-					  {
-						var obj = showtime.JSONDecode(store.favorites);
-						var ancor = entries[item].getElementByTagName("a")[0];
-						var streamLink  = ancor.attributes.getNamedItem("href").value;
-						var title = encode_utf8(ancor.textContent);
+        obj.push({link:streamLink, title:title});
+        store.favorites = showtime.JSONEncode(obj);
+      });
 
-						obj.push({link:streamLink, title:title});
-						store.favorites = showtime.JSONEncode(obj);
-					  });
-		  }
-
-		  if(noEntry == true)
-			  page.appendPassiveItem('video', '', { title: 'The search gave no results' });
-
-		page.loading = false;
-	  }
+      if(noEntry == true)
+        page.appendPassiveItem('video', '', { title: 'The search gave no results' });
+    }
+    page.loading = false;
   });
 
 
@@ -327,13 +317,13 @@
 
   // Register Start Page
   plugin.addURI(PLUGIN_PREFIX+"start", function(page) {
-	page.metadata.icon = Plugin.path + 'bs.png';
-	page.type = "directory";
+    page.metadata.icon = Plugin.path + 'bs.png';
+    page.type = "directory";
     page.metadata.title = "bs.to Main Menu";
+    page.appendItem(PLUGIN_PREFIX + ':Search:', 'search' , {title: "Search..."});
     page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
     page.appendItem(PLUGIN_PREFIX + ':DisplayFavorites','item',{ title: "Favorites", });
-    page.appendItem(PLUGIN_PREFIX + ':Search','item',{ title: "Search...", });
-	page.loading = false;
+    page.loading = false;
   });
 
 })(this);
