@@ -116,27 +116,30 @@
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 
-		var hosters = dom.root.getElementByClassName('hoster-tabs')[0].getElementByTagName("li");
+    var hosterTabs = dom.root.getElementByClassName('hoster-tabs');
+    for (var i = 0; i < hosterTabs.length; i++) {
+      var hosters = hosterTabs[i].getElementByTagName("li");
 
-		for(var k=0; k< hosters.length; k++)
-	    {
-	    	var hostname = hosters[k].getElementByTagName("span")[0].attributes.getNamedItem("class").value.replace("icon ","");
-	    	var hosterlink  = hosters[k].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+      for(var k=0; k< hosters.length; k++)
+      {
+        var hostname = hosters[k].getElementByTagName("span")[0].attributes.getNamedItem("class").value.replace("icon ","");
+        var hosterlink  = hosters[k].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
 
-	    	var resolverstatus = resolvers.check(hostname);
-	    	var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
+        var resolverstatus = resolvers.check(hostname);
+        var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
 
-	    	if(resolverstatus)
-	    	{
-	    		page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname+":"+episodeLink , 'directory', {
-					  title: new showtime.RichText(hostname + statusmessage)
-				  });
-	    	}
-	    	else
-	    	{
-	    		page.appendPassiveItem('directory', '', { title: new showtime.RichText(hostname + statusmessage)  });
-	    	}
-	    }
+        if(resolverstatus)
+        {
+          page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname+":"+episodeLink , 'directory', {
+            title: new showtime.RichText(hostname + statusmessage)
+          });
+        }
+        else
+        {
+          page.appendPassiveItem('directory', '', { title: new showtime.RichText(hostname + statusmessage)  });
+        }
+      }
+    }
   });
 
   // Lists the available episodes for a given season
