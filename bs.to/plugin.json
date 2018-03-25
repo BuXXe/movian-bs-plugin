@@ -9,6 +9,6 @@
   "title": "bs.to",
   "icon": "bs.png",
   "synopsis": "Movian plugin to watch bs.to streams",
-  "description":"<p>bs.to Movian plugin allows the integration of bs.to streams into Movian. bs.to offers a broad variety of german / english tv-series. If you encounter problems, leave a note at the github. Visit at: https://github.com/BuXXe/movian-bs-plugin</p>",
+  "description":"<p>bs.to Movian plugin allows the integration of bs.to streams into Movian. bs.to offers a broad variety of german / english tv-series. If you encounter problems, leave a note at the github. Visit at: https://github.com/BuXXe/movian-bs-plugin<br>Thx to visualpharm.com for the dice icon.</p>",
   "homepage":"https://github.com/BuXXe/movian-bs-plugin"
 }
