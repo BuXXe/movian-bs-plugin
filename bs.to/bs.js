@@ -109,6 +109,7 @@
   plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
 	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
+    page.loading = true;
 	  // get the series title, season and episode number
 	  // seasonlink is serie/seriesname/seasonnumber/episodename
     // for random episode feature the link is random/serie/seriesname
@@ -145,6 +146,8 @@
         }
       }
     }
+
+    page.loading = false;
   });
 
   // Lists the available episodes for a given season
@@ -154,6 +157,7 @@
 	  // get the series title and season
 	  // seasonlink is serie/seriesname/seasonnumber
 	  page.metadata.title = seasonLink.split("/")[1] + " - Season "+seasonLink.split("/")[2];
+    page.loading = true;
 
 	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
 	  var dom = html.parse(SeasonResponse.toString());
@@ -184,12 +188,14 @@
 			  title: "Episode " + episodeNumber + " " + Titles
 		  });
 	  }
+
+    page.loading = false;
   });
 
   // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
 	  	page.metadata.icon = Plugin.path + 'bs.png';
-	  	page.loading = false;
+	  	page.loading = true;
 	  	page.type = 'directory';
 	  	page.metadata.title = series.split("serie/")[1];
 
@@ -218,6 +224,7 @@
 	  	page.metadata.icon = Plugin.path + 'bs.png';
 	  	page.type = "directory";
 	    page.metadata.title = "bs.to series list";
+      page.loading = true;
 
 	  	var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
 	  	var dom = html.parse(BrowseResponse.toString());
@@ -244,6 +251,8 @@
     			store.favorites = showtime.JSONEncode(obj);
     		});
 	    }
+
+      page.loading = false;
   });
 
 
@@ -279,10 +288,11 @@
         obj.push({link:streamLink, title:title});
         store.favorites = showtime.JSONEncode(obj);
       });
-
-      if(noEntry == true)
-        page.appendPassiveItem('video', '', { title: 'The search gave no results' });
     }
+
+    if(noEntry == true)
+      page.appendPassiveItem('video', '', { title: 'The search gave no results' });
+
     page.loading = false;
   });
 
