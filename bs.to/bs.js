@@ -1,7 +1,7 @@
 /**
  * Movian plugin to watch bs.to streams
  *
- * Copyright (C) 2015-2017 BuXXe
+ * Copyright (C) 2015-2018 BuXXe
  *
  *     This file is part of bs.to Movian plugin.
  *
@@ -60,7 +60,7 @@
   });
 
   // resolves the hoster link and gives the final link to the stream file
-  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*)", function(page,episodeLink, hostername){
+  plugin.addURI(PLUGIN_PREFIX + ":EpisodesHandler:(.*):(.*):(.*)", function(page,episodeLink, hostername, canonical){
 	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
 	  	// get the series title, season and episode number
@@ -85,41 +85,69 @@
 		var vidlink = resolvers.resolve(directlink, hostername)
 		if(vidlink == null)
     		page.appendPassiveItem('video', '', { title: "File is not available"  });
-		else
-		page.appendItem(vidlink[1], 'video', { title: vidlink[0] });
+		else {
+      if (vidlink.length == 2) {
+        page.redirect('videoparams:' + showtime.JSONEncode({
+          canonicalUrl: PLUGIN_PREFIX + ':ShowHostsForEpisode:' + canonical,
+          sources: [{
+            url: vidlink[1]
+          }]
+        }));
+      } else {
+        for (var i = 0; i < vidlink.length; i += 2) {
+          page.appendItem('videoparams:' + showtime.JSONEncode({
+            canonicalUrl: PLUGIN_PREFIX + ':ShowHostsForEpisode:' + canonical,
+            sources: [{
+              url: vidlink[i+1]
+            }]
+          }), 'video', { title: vidlink[i+0] });
+        }
+      }
+    }
   });
 
   plugin.addURI(PLUGIN_PREFIX + ":ShowHostsForEpisode:(.*)", function(page,episodeLink){
 	  page.metadata.icon = Plugin.path + 'bs.png';
 	  page.type = 'directory';
+    page.loading = true;
 	  // get the series title, season and episode number
 	  // seasonlink is serie/seriesname/seasonnumber/episodename
-	  page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
+    // for random episode feature the link is random/serie/seriesname
+    if (episodeLink.split("/")[0] == 'random') {
+      page.metadata.title = episodeLink.split("/")[2] + ' - Random episode';
+    } else {
+      page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
+    }
 
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 
-		var hosters = dom.root.getElementByClassName('hoster-tabs')[0].getElementByTagName("li");
+    var hosterTabs = dom.root.getElementByClassName('hoster-tabs');
+    for (var i = 0; i < hosterTabs.length; i++) {
+      var hosters = hosterTabs[i].getElementByTagName("li");
 
-		for(var k=0; k< hosters.length; k++)
-	    {
-	    	var hostname = hosters[k].getElementByTagName("span")[0].attributes.getNamedItem("class").value.replace("icon ","");
-	    	var hosterlink  = hosters[k].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
+      for(var k=0; k< hosters.length; k++)
+      {
+        var hostname = hosters[k].getElementByTagName("span")[0].attributes.getNamedItem("class").value.replace("icon ","");
+        var hosterlink  = hosters[k].getElementByTagName("a")[0].attributes.getNamedItem("href").value;
 
-	    	var resolverstatus = resolvers.check(hostname);
-	    	var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
+        var resolverstatus = resolvers.check(hostname);
+        var statusmessage = resolverstatus ? " <font color=\"009933\">[Working]</font>":" <font color=\"CC0000\">[Not Working]</font>";
 
-	    	if(resolverstatus)
-	    	{
-	    		page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname , 'directory', {
-					  title: new showtime.RichText(hostname + statusmessage)
-				  });
-	    	}
-	    	else
-	    	{
-	    		page.appendPassiveItem('directory', '', { title: new showtime.RichText(hostname + statusmessage)  });
-	    	}
-	    }
+        if(resolverstatus)
+        {
+          page.appendItem(PLUGIN_PREFIX + ":EpisodesHandler:" + hosterlink+":"+hostname+":"+episodeLink , 'directory', {
+            title: new showtime.RichText(hostname + statusmessage)
+          });
+        }
+        else
+        {
+          page.appendPassiveItem('directory', '', { title: new showtime.RichText(hostname + statusmessage)  });
+        }
+      }
+    }
+
+    page.loading = false;
   });
 
   // Lists the available episodes for a given season
@@ -129,6 +157,7 @@
 	  // get the series title and season
 	  // seasonlink is serie/seriesname/seasonnumber
 	  page.metadata.title = seasonLink.split("/")[1] + " - Season "+seasonLink.split("/")[2];
+    page.loading = true;
 
 	  var SeasonResponse = showtime.httpGet("http://bs.to/"+seasonLink);
 	  var dom = html.parse(SeasonResponse.toString());
@@ -155,18 +184,24 @@
 
 		  var Titles = a ? (b? a + " - " + b : a) : b;
 
-		  page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'directory', {
+      page.appendItem(PLUGIN_PREFIX + ":ShowHostsForEpisode:" + episodeLink , 'video', {
 			  title: "Episode " + episodeNumber + " " + Titles
 		  });
 	  }
+
+    page.loading = false;
   });
 
   // Series Handler: show seasons for given series link
   plugin.addURI(PLUGIN_PREFIX + ':SeriesSite:(.*)', function(page, series) {
 	  	page.metadata.icon = Plugin.path + 'bs.png';
-	  	page.loading = false;
+	  	page.loading = true;
 	  	page.type = 'directory';
 	  	page.metadata.title = series.split("serie/")[1];
+
+      page.appendItem(PLUGIN_PREFIX + ':ShowHostsForEpisode:random/'+series, 'item',
+        {title: 'Random episode', icon: plugin.path+'Dice.svg'}
+      );
 
 	    var seriespageresponse = showtime.httpGet('http://bs.to/'+series);
 	  	var dom = html.parse(seriespageresponse.toString());
@@ -189,6 +224,7 @@
 	  	page.metadata.icon = Plugin.path + 'bs.png';
 	  	page.type = "directory";
 	    page.metadata.title = "bs.to series list";
+      page.loading = true;
 
 	  	var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
 	  	var dom = html.parse(BrowseResponse.toString());
@@ -215,56 +251,49 @@
     			store.favorites = showtime.JSONEncode(obj);
     		});
 	    }
+
+      page.loading = false;
   });
 
 
-  plugin.addURI(PLUGIN_PREFIX+":Search", function(page) {
-	  page.metadata.icon = Plugin.path + 'bs.png';
-	  page.type="directory";
+  plugin.addURI(PLUGIN_PREFIX+":Search:(.*)", function(page, searchquery) {
+    page.metadata.icon = Plugin.path + 'bs.png';
+    page.type = "directory";
+    page.loading = true;
 
-	  var res = showtime.textDialog("What series do you want to search for?", true,true);
+    page.metadata.title = "Search for series containing: "+ searchquery;
+    var noEntry = true;
+    var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
+    var dom = html.parse(BrowseResponse.toString());
 
-	  // check for user abort
-	  if(res.rejected)
-		  page.redirect(PLUGIN_PREFIX+"start");
-	  else
-	  {
-		  page.metadata.title = "Search for series containing: "+ res.input;
-		  var noEntry = true;
-		  var BrowseResponse = showtime.httpGet("http://bs.to/serie-alphabet");
-		  var dom = html.parse(BrowseResponse.toString());
+    var entries = dom.root.getElementById('seriesContainer').getElementByTagName("li");
 
-		  var entries =  dom.root.getElementById('seriesContainer').getElementByTagName("li");
+    for(var k=0; k< entries.length; k++) {
+      var ancor = entries[k].getElementByTagName("a")[0];
+      var title = ancor.textContent;
+      if(title.toLowerCase().indexOf(searchquery.toLowerCase())<0)
+        continue;
 
-		  for(var k=0; k< entries.length; k++)
-		  {
-			  var ancor = entries[k].getElementByTagName("a")[0];
-			  var title = ancor.textContent;
-			  if(title.toLowerCase().indexOf(res.input.toLowerCase())<0)
-				  continue;
+      var streamLink  = ancor.attributes.getNamedItem("href").value;
+      var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
+      noEntry=false;
 
-			  var streamLink  = ancor.attributes.getNamedItem("href").value;
-			  var item = page.appendItem(PLUGIN_PREFIX + ':SeriesSite:'+ streamLink, 'directory', { title: title });
-			  noEntry=false;
+      item.addOptAction("Add series '" + title + "' to favorites", k);
+      item.onEvent(k, function(item) {
+        var obj = showtime.JSONDecode(store.favorites);
+        var ancor = entries[item].getElementByTagName("a")[0];
+        var streamLink  = ancor.attributes.getNamedItem("href").value;
+        var title = encode_utf8(ancor.textContent);
 
-			  item.addOptAction("Add series '" + title + "' to favorites", k);
-			  item.onEvent(k, function(item)
-					  {
-						var obj = showtime.JSONDecode(store.favorites);
-						var ancor = entries[item].getElementByTagName("a")[0];
-						var streamLink  = ancor.attributes.getNamedItem("href").value;
-						var title = encode_utf8(ancor.textContent);
+        obj.push({link:streamLink, title:title});
+        store.favorites = showtime.JSONEncode(obj);
+      });
+    }
 
-						obj.push({link:streamLink, title:title});
-						store.favorites = showtime.JSONEncode(obj);
-					  });
-		  }
+    if(noEntry == true)
+      page.appendPassiveItem('video', '', { title: 'The search gave no results' });
 
-		  if(noEntry == true)
-			  page.appendPassiveItem('video', '', { title: 'The search gave no results' });
-
-		page.loading = false;
-	  }
+    page.loading = false;
   });
 
 
@@ -310,13 +339,13 @@
 
   // Register Start Page
   plugin.addURI(PLUGIN_PREFIX+"start", function(page) {
-	page.metadata.icon = Plugin.path + 'bs.png';
-	page.type = "directory";
+    page.metadata.icon = Plugin.path + 'bs.png';
+    page.type = "directory";
     page.metadata.title = "bs.to Main Menu";
+    page.appendItem(PLUGIN_PREFIX + ':Search:', 'search' , {title: "Search..."});
     page.appendItem(PLUGIN_PREFIX + ':Browse', 'directory',{title: "Browse"});
     page.appendItem(PLUGIN_PREFIX + ':DisplayFavorites','item',{ title: "Favorites", });
-    page.appendItem(PLUGIN_PREFIX + ':Search','item',{ title: "Search...", });
-	page.loading = false;
+    page.loading = false;
   });
 
 })(this);
