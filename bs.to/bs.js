@@ -112,8 +112,12 @@
     page.loading = true;
 	  // get the series title, season and episode number
 	  // seasonlink is serie/seriesname/seasonnumber/episodename
-	  page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
-
+      // for random episode feature the link is random/serie/seriesname
+      if (episodeLink.split("/")[0] == 'random') {
+        page.metadata.title = episodeLink.split("/")[2] + ' - Random episode';
+      } else {
+        page.metadata.title = episodeLink.split("/")[1] + " - Season "+episodeLink.split("/")[2]+ " - Episode "+episodeLink.split("/")[3];
+      }
 	  	var getHosterLink = showtime.httpGet("http://bs.to/"+episodeLink);
 		var dom = html.parse(getHosterLink.toString());
 
@@ -193,7 +197,11 @@
 	  	page.loading = true;
 	  	page.type = 'directory';
 	  	page.metadata.title = series.split("serie/")[1];
-
+	  	
+	  	page.appendItem(PLUGIN_PREFIX + ':ShowHostsForEpisode:random/'+series, 'item',
+	  		{title: 'Random episode', icon: plugin.path+'Dice.svg'}
+	  	);
+	  	
 	    var seriespageresponse = showtime.httpGet('http://bs.to/'+series);
 	  	var dom = html.parse(seriespageresponse.toString());
 	  	var seasons = dom.root.getElementById('seasons').getElementByTagName("a");
